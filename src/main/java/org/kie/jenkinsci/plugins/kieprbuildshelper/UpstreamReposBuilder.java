@@ -1,16 +1,22 @@
 package org.kie.jenkinsci.plugins.kieprbuildshelper;
 
 import hudson.EnvVars;
+import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.Extension;
 import hudson.Proc;
 import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
 import hudson.model.AbstractProject;
-import hudson.tasks.Builder;
+import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
+import hudson.tasks.Builder;
 import net.sf.json.JSONObject;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.fluent.Request;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.protocol.HTTP;
 import org.jenkinsci.plugins.gitclient.Git;
 import org.jenkinsci.plugins.gitclient.GitClient;
 import org.kohsuke.github.GHIssueState;
@@ -22,9 +28,9 @@ import org.kohsuke.stapler.StaplerRequest;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.logging.Logger;
+import java.util.Map;
 
 /**
  * Custom {@link Builder} which allows building upstream repositories during automated PR builds.
@@ -52,105 +58,199 @@ import java.util.logging.Logger;
  */
 public class UpstreamReposBuilder extends Builder {
 
-    private static final Logger logger = Logger.getLogger(UpstreamReposBuilder.class.getName());
+    private PrintStream buildLogger;
+    private String prLink;
+    private String prSourceBranch;
+    private String prTargetBranch;
 
     @DataBoundConstructor
     public UpstreamReposBuilder() {
     }
 
+    /**
+     * Initializes the fields from passed Environmental Variables and BuildListener
+     */
+    public void initFromEnvVars(EnvVars envVars) {
+        prLink = envVars.get("ghprbPullLink");
+        prSourceBranch = envVars.get("ghprbSourceBranch");
+        prTargetBranch = envVars.get("ghprbTargetBranch");
+        buildLogger.println("Working with PR: " + prLink);
+        buildLogger.println("PR source branch: " + prSourceBranch);
+        buildLogger.println("PR target branch: " + prTargetBranch);
+        if (prLink == null || "".equals(prLink)) {
+            throw new IllegalStateException("PR link not set! Make sure variable 'ghprbPullLink' contains valid link to GitHub Pull Request!");
+        }
+        if (prSourceBranch == null || "".equals(prSourceBranch)) {
+            throw new IllegalStateException("PR source branch not set! Make sure variable 'ghprbSourceBranch' contains valid source branch for the configured GitHub Pull Request!");
+        }
+        if (prTargetBranch == null || "".equals(prTargetBranch)) {
+            throw new IllegalStateException("PR target branch not set! Make sure variable 'ghprbTargetBranch' contains valid target branch for the configured GitHub Pull Request!");
+        }
+    }
+
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) {
         try {
+            buildLogger = listener.getLogger();
+            buildLogger.println("Upstream repositories builder started.");
             EnvVars envVars = build.getEnvironment(launcher.getListener());
-            // get info about the PR from variables provided by GitHub Pull Request Builder plugin
-            String prLink = envVars.get("ghprbPullLink");
-            String prSrcBranch = envVars.get("ghprbSourceBranch");
-            String prTargetBranch = envVars.get("ghprbTargetBranch");
-            listener.getLogger().println("Working with PR: " + prLink);
-            listener.getLogger().println("PR source branch: " + prSrcBranch);
-            if (prLink == null || "".equals(prLink)) {
-                throw new IllegalStateException("PR link not set! Make sure variable 'ghprbPullLink' contains valid link to GitHub Pull Request!");
-            }
-            if (prSrcBranch == null || "".equals(prSrcBranch)) {
-                throw new IllegalStateException("PR source branch not set! Make sure variable 'ghprbSourceBranch' contains valid source branch for the configured GitHub Pull Request!");
-            }
-            if (prTargetBranch == null || "".equals(prTargetBranch)) {
-                throw new IllegalStateException("PR target branch not set! Make sure variable 'ghprbTargetBranch' contains valid target branch for the configured GitHub Pull Request!");
-            }
-            GitHubRepositoryList kieRepoList = loadRepositoryList(prTargetBranch);
-            String ghOAuthToken = getDescriptor().getGhOAuthToken();
-            PrintStream logger = listener.getLogger();
+            initFromEnvVars(envVars);
             FilePath workspace = build.getWorkspace();
 
+            GitHubRepositoryList kieRepoList = loadRepositoryList(prTargetBranch);
+            String ghOAuthToken = getDescriptor().getGhOAuthToken();
+
             if (ghOAuthToken == null) {
-                logger.println("No GitHub OAuth token found. Please set one on global Jenkins configuration page.");
+                buildLogger.println("No GitHub OAuth token found. Please set one on global Jenkins configuration page.");
                 return false;
             }
             FilePath upstreamReposDir = new FilePath(workspace, "upstream-repos");
-            // clean-up the destination dir to avoid stale content
-            logger.println("Cleaning-up directory " + upstreamReposDir.getRemote());
+            // clean-up the destination directory to avoid stale content
+            buildLogger.println("Cleaning-up directory " + upstreamReposDir.getRemote());
             upstreamReposDir.deleteRecursive();
 
             GitHub github = GitHub.connectUsingOAuth(ghOAuthToken);
-            GitHubPRSummary prSummary = GitHubPRSummary.fromPRLink(prLink, prSrcBranch, github);
-            List<GitHubRepository> upstreamRepos = gatherUpstreamReposToBuild(prSummary.getTargetRepo(), prSrcBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);
+            // get info about the PR from variables provided by GitHub Pull Request Builder plugin
+            GitHubPRSummary prSummary = GitHubPRSummary.fromPRLink(prLink, prSourceBranch, github);
+            Map<GitHubRepository, String> upstreamRepos = gatherUpstreamReposToBuild(prSummary.getTargetRepo(), prSourceBranch, prTargetBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);
             // clone upstream repositories
-            for (GitHubRepository ghRepo : upstreamRepos) {
+            logUpstreamRepos(upstreamRepos);
+            for (Map.Entry<GitHubRepository, String> entry : upstreamRepos.entrySet()) {
+                GitHubRepository ghRepo = entry.getKey();
+                String branch = entry.getValue();
                 FilePath repoDir = new FilePath(upstreamReposDir, ghRepo.getName());
-                ghCloneAndCheckout(ghRepo, prSummary.getSourceBranch(), repoDir, listener);
+                ghCloneAndCheckout(ghRepo, branch, repoDir, listener);
             }
             // build upstream repositories using Maven
-            for (GitHubRepository ghRepo : upstreamRepos) {
-                buildMavenProject(new FilePath(upstreamReposDir, ghRepo.getName()), "/opt/tools/apache-maven-3.2.3", launcher, listener, envVars);
+            for (Map.Entry<GitHubRepository, String> entry : upstreamRepos.entrySet()) {
+                GitHubRepository ghRepo = entry.getKey();
+                buildMavenProject(new FilePath(upstreamReposDir, ghRepo.getName()), "/opt/tools/apache-maven-3.2.3", workspace, launcher, listener, envVars);
             }
+            buildLogger.println("Upstream repositories builder finished successfully.");
         } catch (Exception ex) {
-            listener.getLogger().println("Error while trying to clone needed upstream repositories! " + ex.getMessage());
+            listener.getLogger().println("Unexpected error while executing the UpstreamReposBuilder! " + ex.getMessage());
+            buildLogger.println("Upstream repositories builder finished with error!");
             return false;
         }
         return true;
     }
 
+    private void logUpstreamRepos(Map<GitHubRepository, String> upstreamRepos) {
+        if (upstreamRepos.size() > 0) {
+            buildLogger.println("Upstream GitHub repositories that will be cloned and build:");
+            for (Map.Entry<GitHubRepository, String> entry : upstreamRepos.entrySet()) {
+                // print as <URL>:<branch>
+                buildLogger.println("\t" + entry.getKey().getReadOnlyCloneURL() + ":" + entry.getValue());
+            }
+        } else {
+            buildLogger.println("No required upstream GitHub repositories found. This means the PR is not dependant on any upstream PR.");
+        }
+    }
+
     private GitHubRepositoryList loadRepositoryList(String branch) {
         // TODO make this work OOTB when new branch is added
         if ("master".equals(branch)) {
-            return GitHubRepositoryList.fromClasspathResource(GitHubRepositoryList.KIE_REPO_LIST_MASTER_RESOURCE_PATH);
+//            return GitHubRepositoryList.fromClasspathResource(GitHubRepositoryList.KIE_REPO_LIST_MASTER_RESOURCE_PATH);
+            return KIERepositoryLists.getListForMasterBranch();
         } else if ("6.3.x".equals(branch)) {
-            return GitHubRepositoryList.fromClasspathResource(GitHubRepositoryList.KIE_REPO_LIST_6_3_X_RESOURCE_PATH);
+//            return GitHubRepositoryList.fromClasspathResource(GitHubRepositoryList.KIE_REPO_LIST_6_3_X_RESOURCE_PATH);
+            return KIERepositoryLists.getListFor63xBranch();
         } else if ("6.2.x".equals(branch)) {
-            return GitHubRepositoryList.fromClasspathResource(GitHubRepositoryList.KIE_REPO_LIST_6_2_X_RESOURCE_PATH);
+//            return GitHubRepositoryList.fromClasspathResource(GitHubRepositoryList.KIE_REPO_LIST_6_2_X_RESOURCE_PATH);
+            return KIERepositoryLists.getListFor62xBranch();
         } else {
             throw new IllegalArgumentException("Invalid PR target branch '" + branch + "'! Only master, 6.3.x and 6.2.x supported!");
         }
     }
 
     /**
-     * Gather list of upstream repositories that needs to be build before the base repository (repository with the PR) as
-     * they contain required changes.
+     * Gather list of upstream repositories that needs to be build before the base repository (repository with the PR)
      *
-     * @param baseRepoName GitHub repository name that the PR was submitted against
-     * @param prSrcBranch  source branch of the PR
-     * @param prRepoOwner  owner of the repository with the source PR branch
-     * @param github       GitHub API object used to talk to GitHub REST interface
-     * @return list of upstream repositories that need to be build before the base repository
+     * @param baseRepoName   GitHub repository name that the PR was submitted against
+     * @param prSourceBranch source branch of the PR
+     * @param prRepoOwner    owner of the repository with the source PR branch
+     * @param github         GitHub API object used to talk to GitHub REST interface
+     * @return Map of upstream repositories (with specific branches) that need to be build before the base repository
      */
-    private List<GitHubRepository> gatherUpstreamReposToBuild(String baseRepoName, String prSrcBranch, String prRepoOwner, GitHubRepositoryList kieRepoList, GitHub github) {
-        List<GitHubRepository> upstreamRepos = new ArrayList<GitHubRepository>();
+    private Map<GitHubRepository, String> gatherUpstreamReposToBuild(String baseRepoName, String prSourceBranch, String prTargetBranch, String prRepoOwner, GitHubRepositoryList kieRepoList, GitHub github) {
+        Map<GitHubRepository, String> upstreamRepos = new LinkedHashMap<GitHubRepository, String>();
         for (GitHubRepository kieRepo : kieRepoList.getList()) {
             String kieRepoName = kieRepo.getName();
             if (kieRepoName.equals(baseRepoName)) {
-                // we encountered the base repo, so all upstream repos were already processed
+                // we encountered the base repo, so all upstream repos were already processed and we can return the result
                 return upstreamRepos;
             }
-            if (checkBranchExists(prRepoOwner + "/" + kieRepoName, prSrcBranch, github) &&
-                    checkHasOpenPRAssociated(kieRepo.getOwner() + "/" + kieRepoName, prSrcBranch, prRepoOwner, github)) {
-                upstreamRepos.add(new GitHubRepository(prRepoOwner, kieRepoName));
+            if (checkBranchExists(prRepoOwner + "/" + kieRepoName, prSourceBranch, github) &&
+                    checkHasOpenPRAssociated(kieRepo.getOwner() + "/" + kieRepoName, prSourceBranch, prRepoOwner, github)) {
+                upstreamRepos.put(new GitHubRepository(prRepoOwner, kieRepoName), prSourceBranch);
+            } else {
+                // otherwise just use the current target branch for that repo (we will build the most up to date sources)
+                // this gets a little tricky as we need figure out which uberfire branch matches the target branches for KIE
+                // e.g. for KIE 6.3.x branch we need UF 0.7.x and Dashuilder 0.3.x branches
+                String baseBranch = getBaseBranch(baseRepoName, kieRepo, prTargetBranch);
+                upstreamRepos.put(kieRepo, baseBranch);
             }
         }
         return upstreamRepos;
     }
 
     /**
-     * Checks whether GitHub repository has the specified branch.
+     * @param baseRepoName   repository name against which the PR was submitted
+     * @param ghRepo         GitHub repository we want to get the branch for
+     * @param prTargetBranch target branch specified in the PR
+     * @return name of the blessed branch which should be used together with the target PR branch
+     */
+    private String getBaseBranch(String baseRepoName, GitHubRepository ghRepo, String prTargetBranch) {
+        // all UF repositories share the branch names, so if the PR is against UF repo, the branch will always
+        // be the same as the PR target branch
+        if (baseRepoName.startsWith("uberfire")) {
+            return prTargetBranch;
+        } else if (baseRepoName.equals("dashbuilder")) {
+            if ("master".equals(prTargetBranch)) {
+                return "master";
+            } else if ("0.7.x".equals(prTargetBranch)) {
+                return "0.3.x";
+            } else if ("0.5.x".equals(prTargetBranch)) {
+                return "0.2.x";
+            } else {
+                throw new IllegalArgumentException("Invalid PR target branch for repo '" + baseRepoName + "': " + prTargetBranch);
+            }
+        } else {
+            // assume the repo is one of the core KIE repos (starting from droolsjbpm-build-bootstrap)
+            if ("master".equals(prTargetBranch)) {
+                return "master";
+            } else if ("6.3.x".equals(prTargetBranch)) {
+                if (isUberFireRepo(ghRepo)) {
+                    return "0.7.x";
+                } else if (isDashbuilderRepo(ghRepo)) {
+                    return "0.3.x";
+                } else {
+                    return "6.3.x";
+                }
+            } else if ("6.2.x".equals(prTargetBranch)) {
+                if (isUberFireRepo(ghRepo)) {
+                    return "0.5.x";
+                } else if (isDashbuilderRepo(ghRepo)) {
+                    return "0.2.x";
+                } else {
+                    return "6.2.x";
+                }
+            } else {
+                throw new IllegalArgumentException("Invalid PR target branch for repo '" + baseRepoName + "': " + prTargetBranch);
+            }
+        }
+    }
+
+    private boolean isUberFireRepo(GitHubRepository repo) {
+        return repo.getName().startsWith("uberfire");
+    }
+
+    private boolean isDashbuilderRepo(GitHubRepository repo) {
+        return repo.getName().startsWith("dashbuilder");
+    }
+
+    /**
+     * Checks whether GitHub repository has specific branch.
      * <p>
      * Used to check if the fork has the same branch as repo with PR.
      *
@@ -175,17 +275,17 @@ public class UpstreamReposBuilder extends Builder {
      * PRs are connected and need to be built together.
      *
      * @param fullRepoName full GitHub repository name (owner + name)
-     * @param branch       branch used to submit the PR
+     * @param prBranch     branch that was used to submit the PR
      * @param prRepoOwner  owner of the repository that contain the PR branch
      * @param github       GitHub API object used to talk to GitHub REST interface
      * @return true if the specified repository contains open PR with the same branch and owner, otherwise false
      */
-    private boolean checkHasOpenPRAssociated(String fullRepoName, String branch, String prRepoOwner, GitHub github) {
+    private boolean checkHasOpenPRAssociated(String fullRepoName, String prBranch, String prRepoOwner, GitHub github) {
         try {
             List<GHPullRequest> prs = github.getRepository(fullRepoName).getPullRequests(GHIssueState.OPEN);
             for (GHPullRequest pr : prs) {
                 // check if the PR source branch and name of the fork are the ones we are looking for
-                if (pr.getHead().getRef().equals(branch) &&
+                if (pr.getHead().getRef().equals(prBranch) &&
                         pr.getHead().getRepository().getOwner().getLogin().equals(prRepoOwner)) {
                     return true;
                 }
@@ -211,28 +311,28 @@ public class UpstreamReposBuilder extends Builder {
                 .in(destDir)
                 .using("git")
                 .getClient();
-        git.clone("git://github.com/" + ghRepo.getOwner() + "/" + ghRepo.getName(), "origin", false, null);
+        git.clone(ghRepo.getReadOnlyCloneURL(), "origin", true, null);
         git.checkoutBranch(branch, "origin/" + branch);
     }
 
     /**
      * Builds Maven project from the specified working directory (contains pom.xml).
      *
-     * @param workdir
+     * @param projectWorkdir
      * @param mavenHome
      * @param launcher
      * @param listener
      * @param envVars
      */
-
-    private void buildMavenProject(FilePath workdir, String mavenHome, Launcher launcher, BuildListener listener, EnvVars envVars) {
+    private void buildMavenProject(FilePath projectWorkdir, String mavenHome, FilePath jobWorkspace, Launcher launcher, BuildListener listener, EnvVars envVars) {
         int exitCode;
+        String localMavenRepoPath = new FilePath(jobWorkspace, ".repository").getRemote();
         try {
             Proc proc = launcher.launch()
-                    // TODO make this (Maven home + command) configurable,  both on global and local level
-                    .cmdAsSingleString(mavenHome + "/bin/mvn -B -e -T2C clean install -DskipTests -Dgwt.compiler.skip=true")
+                    // TODO make this (Maven home + command) configurable, both on global and job level
+                    .cmdAsSingleString(mavenHome + "/bin/mvn -B -e -T2C clean install -DskipTests -Dgwt.compiler.skip=true -Dmaven.repo.local=" + localMavenRepoPath)
                     .envs(envVars)
-                    .pwd(workdir)
+                    .pwd(projectWorkdir)
                     .stdout(listener.getLogger())
                     .stderr(listener.getLogger())
                     .start();
