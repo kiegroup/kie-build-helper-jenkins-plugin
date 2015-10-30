@@ -11,12 +11,6 @@ import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import net.sf.json.JSONObject;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.fluent.Request;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.protocol.HTTP;
 import org.jenkinsci.plugins.gitclient.Git;
 import org.jenkinsci.plugins.gitclient.GitClient;
 import org.kohsuke.github.GHIssueState;
@@ -28,6 +22,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,8 +35,8 @@ import java.util.Map;
  * <p>
  * <p>
  * When the user configures the project and enables this builder,
- * {@link DescriptorImpl#newInstance(StaplerRequest)} is invoked
- * and a new {@link UpstreamReposBuilder} is created. The created
+ * {@link Descriptor#newInstance(StaplerRequest)} is invoked
+ * and a new {@link KiePRBuildsHelper} is created. The created
  * instance is persisted to the project configuration XML by using
  * XStream, so this allows you to use instance fields
  * to remember the configuration.
@@ -98,7 +93,7 @@ public class UpstreamReposBuilder extends Builder {
             FilePath workspace = build.getWorkspace();
 
             GitHubRepositoryList kieRepoList = loadRepositoryList(prTargetBranch);
-            String ghOAuthToken = getDescriptor().getGhOAuthToken();
+            String ghOAuthToken = KiePRBuildsHelper.getKiePRBuildsHelperDescriptor().getGhOAuthToken();
 
             if (ghOAuthToken == null) {
                 buildLogger.println("No GitHub OAuth token found. Please set one on global Jenkins configuration page.");
@@ -112,7 +107,10 @@ public class UpstreamReposBuilder extends Builder {
             GitHub github = GitHub.connectUsingOAuth(ghOAuthToken);
             // get info about the PR from variables provided by GitHub Pull Request Builder plugin
             GitHubPRSummary prSummary = GitHubPRSummary.fromPRLink(prLink, prSourceBranch, github);
-            Map<GitHubRepository, String> upstreamRepos = gatherUpstreamReposToBuild(prSummary.getTargetRepo(), prSourceBranch, prTargetBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);
+
+            String prRepoName = prSummary.getTargetRepo();
+            filterOutUnnecessaryUpstreamRepos(prRepoName, kieRepoList.getList());
+            Map<GitHubRepository, String> upstreamRepos = gatherUpstreamReposToBuild(prRepoName, prSourceBranch, prTargetBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);
             // clone upstream repositories
             logUpstreamRepos(upstreamRepos);
             for (Map.Entry<GitHubRepository, String> entry : upstreamRepos.entrySet()) {
@@ -133,6 +131,22 @@ public class UpstreamReposBuilder extends Builder {
             return false;
         }
         return true;
+    }
+
+    private void filterOutUnnecessaryUpstreamRepos(String prRepoName, List<GitHubRepository> repoList) {
+        if (Arrays.asList("droolsjbpm-knowledge", "drools", "optaplanner", "jbpm", "droolsjbpm-integration", "droolsjbpm-tools").contains(prRepoName)) {
+            repoList.remove(new GitHubRepository("uberfire", "uberfire"));
+            repoList.remove(new GitHubRepository("uberfire", "uberfire-extensions"));
+            repoList.remove(new GitHubRepository("dashbuilder", "dashbuilder"));
+        }
+        // nothing depends on stuff from -tools repo
+        repoList.remove(new GitHubRepository("droolsjbpm", "droolsjbpm-tools"));
+        // nothing really depends on optaplanner (maybe the optaplanner-wb but that's still not actively developed)
+        repoList.remove(new GitHubRepository("droolsjbpm", "optaplanner"));
+        // no need to build docs, they are pretty much standalone
+        repoList.remove(new GitHubRepository("droolsjbpm", "kie-docs"));
+
+
     }
 
     private void logUpstreamRepos(Map<GitHubRepository, String> upstreamRepos) {
@@ -164,19 +178,19 @@ public class UpstreamReposBuilder extends Builder {
     }
 
     /**
-     * Gather list of upstream repositories that needs to be build before the base repository (repository with the PR)
+     * Gather list of upstream repositories that needs to be build before the base repository (repository with the PR).
      *
-     * @param baseRepoName   GitHub repository name that the PR was submitted against
+     * @param prRepoName   GitHub repository name that the PR was submitted against
      * @param prSourceBranch source branch of the PR
      * @param prRepoOwner    owner of the repository with the source PR branch
      * @param github         GitHub API object used to talk to GitHub REST interface
      * @return Map of upstream repositories (with specific branches) that need to be build before the base repository
      */
-    private Map<GitHubRepository, String> gatherUpstreamReposToBuild(String baseRepoName, String prSourceBranch, String prTargetBranch, String prRepoOwner, GitHubRepositoryList kieRepoList, GitHub github) {
+    private Map<GitHubRepository, String> gatherUpstreamReposToBuild(String prRepoName, String prSourceBranch, String prTargetBranch, String prRepoOwner, GitHubRepositoryList kieRepoList, GitHub github) {
         Map<GitHubRepository, String> upstreamRepos = new LinkedHashMap<GitHubRepository, String>();
         for (GitHubRepository kieRepo : kieRepoList.getList()) {
             String kieRepoName = kieRepo.getName();
-            if (kieRepoName.equals(baseRepoName)) {
+            if (kieRepoName.equals(prRepoName)) {
                 // we encountered the base repo, so all upstream repos were already processed and we can return the result
                 return upstreamRepos;
             }
@@ -187,7 +201,7 @@ public class UpstreamReposBuilder extends Builder {
                 // otherwise just use the current target branch for that repo (we will build the most up to date sources)
                 // this gets a little tricky as we need figure out which uberfire branch matches the target branches for KIE
                 // e.g. for KIE 6.3.x branch we need UF 0.7.x and Dashuilder 0.3.x branches
-                String baseBranch = getBaseBranch(baseRepoName, kieRepo, prTargetBranch);
+                String baseBranch = determineBaseBranch(kieRepo, prRepoName , prTargetBranch);
                 upstreamRepos.put(kieRepo, baseBranch);
             }
         }
@@ -195,17 +209,21 @@ public class UpstreamReposBuilder extends Builder {
     }
 
     /**
-     * @param baseRepoName   repository name against which the PR was submitted
+     * Determines base branch for specified repository. This is used to clone repositories which do not directly
+     * contain any specific changes. Building those base branches will decrease the number of false negatives caused
+     * by stale snapshots, as we will always have the latest sources available.
+     *
      * @param ghRepo         GitHub repository we want to get the branch for
+     * @param prRepoName     repository name against which the PR was submitted
      * @param prTargetBranch target branch specified in the PR
-     * @return name of the blessed branch which should be used together with the target PR branch
+     * @return name of the base branch which matches the target PR branch
      */
-    private String getBaseBranch(String baseRepoName, GitHubRepository ghRepo, String prTargetBranch) {
+    private String determineBaseBranch(GitHubRepository ghRepo, String prRepoName, String prTargetBranch) {
         // all UF repositories share the branch names, so if the PR is against UF repo, the branch will always
         // be the same as the PR target branch
-        if (baseRepoName.startsWith("uberfire")) {
+        if (prRepoName.startsWith("uberfire")) {
             return prTargetBranch;
-        } else if (baseRepoName.equals("dashbuilder")) {
+        } else if (prRepoName.equals("dashbuilder")) {
             if ("master".equals(prTargetBranch)) {
                 return "master";
             } else if ("0.7.x".equals(prTargetBranch)) {
@@ -213,7 +231,7 @@ public class UpstreamReposBuilder extends Builder {
             } else if ("0.5.x".equals(prTargetBranch)) {
                 return "0.2.x";
             } else {
-                throw new IllegalArgumentException("Invalid PR target branch for repo '" + baseRepoName + "': " + prTargetBranch);
+                throw new IllegalArgumentException("Invalid PR target branch for repo '" + prRepoName + "': " + prTargetBranch);
             }
         } else {
             // assume the repo is one of the core KIE repos (starting from droolsjbpm-build-bootstrap)
@@ -236,7 +254,7 @@ public class UpstreamReposBuilder extends Builder {
                     return "6.2.x";
                 }
             } else {
-                throw new IllegalArgumentException("Invalid PR target branch for repo '" + baseRepoName + "': " + prTargetBranch);
+                throw new IllegalArgumentException("Invalid PR target branch for repo '" + prRepoName + "': " + prTargetBranch);
             }
         }
     }
@@ -349,29 +367,20 @@ public class UpstreamReposBuilder extends Builder {
     // If your plugin doesn't really define any property on Descriptor,
     // you don't have to do this.
     @Override
-    public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl) super.getDescriptor();
+    public Descriptor getDescriptor() {
+        return (Descriptor) super.getDescriptor();
     }
 
     /**
-     * Descriptor for {@link UpstreamReposBuilder}. Used as a singleton.
+     * Descriptor for {@link KiePRBuildsHelper}. Used as a singleton.
      * The class is marked as public so that it can be accessed from views.
      */
     @Extension // This indicates to Jenkins that this is an implementation of an extension point.
-    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+    public static final class Descriptor extends BuildStepDescriptor<Builder> {
 
-        public DescriptorImpl() {
+        public Descriptor() {
             load();
         }
-
-        /**
-         * To persist global configuration information,
-         * simply store it in a field and call save().
-         * <p>
-         * <p>
-         * If you don't want fields to be persisted, use <tt>transient</tt>.
-         */
-        private String ghOAuthToken;
 
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
             // Indicates that this builder can be used with all kinds of project types
@@ -387,19 +396,11 @@ public class UpstreamReposBuilder extends Builder {
 
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
-            // To persist global configuration information,
-            // set that to properties and call save().
-            ghOAuthToken = formData.getString("ghOAuthToken");
+            req.bindJSON(this, formData);
             save();
-            return super.configure(req, formData);
+            return super.configure(req,formData);
         }
 
-        /**
-         * This method returns the configured OAuth token
-         */
-        public String getGhOAuthToken() {
-            return ghOAuthToken;
-        }
     }
 
 }

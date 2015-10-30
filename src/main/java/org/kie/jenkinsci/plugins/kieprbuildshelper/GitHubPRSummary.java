@@ -62,7 +62,7 @@ public class GitHubPRSummary {
      * @param prLink pull request link, e.g. https://github.com/droolsjbpm/drools-wb/pull/77
      * @param github configured Github instance used to talk to Github REST API
      *
-     * @return summary info about GitHub PR as needed by {@link UpstreamReposBuilder}
+     * @return summary info about GitHub PR
      */
     public static GitHubPRSummary fromPRLink(String prLink, String sourceBranch, GitHub github) {
         String str = preProcessPRLink(prLink);

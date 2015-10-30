@@ -1,5 +1,4 @@
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-  <!--
+<!--
     This Jelly script is used to produce the global configuration option.
 
     Jenkins uses a set of tag libraries to provide uniformity in forms.
@@ -11,9 +10,13 @@
     tags they use. Views are always organized according to its owner class,
     so it should be straightforward to find them.
   -->
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
   <f:section title="KIE GitHub PRs Helper">
     <f:entry title="GitHub OAuth token" field="ghOAuthToken" description="Authentication token used to call GitHub REST API">
       <f:password/>
+    </f:entry>
+    <f:entry title="Maven repo cache zip URL" field="mavenRepoCacheZipUrl" description="Maven repo cache used to speed-up builds">
+      <f:textbox/>
     </f:entry>
   </f:section>
 </j:jelly>
