@@ -71,7 +71,7 @@ public class GitHubPRSummary {
         String targetRepo = parts[1];
         // parts[2] == "pull", not needed
         int id = Integer.parseInt(parts[3]);
-        GHPullRequest pr = null;
+        GHPullRequest pr;
         try {
             pr = github.getRepository(targetRepoOwner + "/" + targetRepo).getPullRequest(id);
             String sourceRepoOwner = pr.getHead().getRepository().getOwner().getLogin();

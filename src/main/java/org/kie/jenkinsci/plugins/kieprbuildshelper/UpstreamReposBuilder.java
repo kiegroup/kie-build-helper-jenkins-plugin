@@ -93,7 +93,8 @@ public class UpstreamReposBuilder extends Builder {
             FilePath workspace = build.getWorkspace();
 
             GitHubRepositoryList kieRepoList = loadRepositoryList(prTargetBranch);
-            String ghOAuthToken = KiePRBuildsHelper.getKiePRBuildsHelperDescriptor().getGhOAuthToken();
+            KiePRBuildsHelper.KiePRBuildsHelperDescriptor globalSettings = KiePRBuildsHelper.getKiePRBuildsHelperDescriptor();
+            String ghOAuthToken = globalSettings.getGhOAuthToken();
 
             if (ghOAuthToken == null) {
                 buildLogger.println("No GitHub OAuth token found. Please set one on global Jenkins configuration page.");
@@ -120,9 +121,15 @@ public class UpstreamReposBuilder extends Builder {
                 ghCloneAndCheckout(ghRepo, branch, repoDir, listener);
             }
             // build upstream repositories using Maven
+            String mavenHome = globalSettings.getMavenHome();
+            String mavenArgLine = globalSettings.getUpstreamBuildsMavenArgLine();
+            String mavenOpts = globalSettings.getMavenOpts();
+            if (!mavenArgLine.contains("-Dmaven.repo.local=")) {
+                mavenArgLine = mavenArgLine + " -Dmaven.repo.local=" + new FilePath(workspace, ".repository").getRemote();
+            }
             for (Map.Entry<GitHubRepository, String> entry : upstreamRepos.entrySet()) {
                 GitHubRepository ghRepo = entry.getKey();
-                buildMavenProject(new FilePath(upstreamReposDir, ghRepo.getName()), "/opt/tools/apache-maven-3.2.3", workspace, launcher, listener, envVars);
+                buildMavenProject(new FilePath(upstreamReposDir, ghRepo.getName()), mavenHome, mavenArgLine, mavenOpts, launcher, listener, envVars);
             }
             buildLogger.println("Upstream repositories builder finished successfully.");
         } catch (Exception ex) {
@@ -145,8 +152,6 @@ public class UpstreamReposBuilder extends Builder {
         repoList.remove(new GitHubRepository("droolsjbpm", "optaplanner"));
         // no need to build docs, they are pretty much standalone
         repoList.remove(new GitHubRepository("droolsjbpm", "kie-docs"));
-
-
     }
 
     private void logUpstreamRepos(Map<GitHubRepository, String> upstreamRepos) {
@@ -180,7 +185,7 @@ public class UpstreamReposBuilder extends Builder {
     /**
      * Gather list of upstream repositories that needs to be build before the base repository (repository with the PR).
      *
-     * @param prRepoName   GitHub repository name that the PR was submitted against
+     * @param prRepoName     GitHub repository name that the PR was submitted against
      * @param prSourceBranch source branch of the PR
      * @param prRepoOwner    owner of the repository with the source PR branch
      * @param github         GitHub API object used to talk to GitHub REST interface
@@ -201,7 +206,7 @@ public class UpstreamReposBuilder extends Builder {
                 // otherwise just use the current target branch for that repo (we will build the most up to date sources)
                 // this gets a little tricky as we need figure out which uberfire branch matches the target branches for KIE
                 // e.g. for KIE 6.3.x branch we need UF 0.7.x and Dashuilder 0.3.x branches
-                String baseBranch = determineBaseBranch(kieRepo, prRepoName , prTargetBranch);
+                String baseBranch = determineBaseBranch(kieRepo, prRepoName, prTargetBranch);
                 upstreamRepos.put(kieRepo, baseBranch);
             }
         }
@@ -336,21 +341,23 @@ public class UpstreamReposBuilder extends Builder {
     /**
      * Builds Maven project from the specified working directory (contains pom.xml).
      *
-     * @param projectWorkdir
-     * @param mavenHome
-     * @param launcher
-     * @param listener
-     * @param envVars
+     * @param projectBasedir directory with pom.xml file
+     * @param mavenHome      home directory of Maven installation that should be used
+     * @param mavenArgLine   Maven argument line with goals, profiles, etc
+     * @param mavenOpts      contents MAVEN_OPTS variables
+     * @param launcher       Jenkins launcher
+     * @param listener       Jenkins build listener
+     * @param envVars        environmental variables passed to the Maven process
      */
-    private void buildMavenProject(FilePath projectWorkdir, String mavenHome, FilePath jobWorkspace, Launcher launcher, BuildListener listener, EnvVars envVars) {
+    private void buildMavenProject(FilePath projectBasedir, String mavenHome, String mavenArgLine, String mavenOpts, Launcher launcher, BuildListener listener, EnvVars envVars) {
         int exitCode;
-        String localMavenRepoPath = new FilePath(jobWorkspace, ".repository").getRemote();
         try {
+            envVars.put("MAVEN_OPTS", mavenOpts);
+            buildLogger.println("MAVEN_OPTS=" + envVars.get("MAVEN_OPTS"));
             Proc proc = launcher.launch()
-                    // TODO make this (Maven home + command) configurable, both on global and job level
-                    .cmdAsSingleString(mavenHome + "/bin/mvn -B -e -T2C clean install -DskipTests -Dgwt.compiler.skip=true -Dmaven.repo.local=" + localMavenRepoPath)
+                    .cmdAsSingleString(mavenHome + "/bin/mvn " + mavenArgLine.trim())
                     .envs(envVars)
-                    .pwd(projectWorkdir)
+                    .pwd(projectBasedir)
                     .stdout(listener.getLogger())
                     .stderr(listener.getLogger())
                     .start();
@@ -363,9 +370,6 @@ public class UpstreamReposBuilder extends Builder {
         }
     }
 
-    // Overridden for better type safety.
-    // If your plugin doesn't really define any property on Descriptor,
-    // you don't have to do this.
     @Override
     public Descriptor getDescriptor() {
         return (Descriptor) super.getDescriptor();
@@ -398,7 +402,7 @@ public class UpstreamReposBuilder extends Builder {
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             req.bindJSON(this, formData);
             save();
-            return super.configure(req,formData);
+            return super.configure(req, formData);
         }
 
     }

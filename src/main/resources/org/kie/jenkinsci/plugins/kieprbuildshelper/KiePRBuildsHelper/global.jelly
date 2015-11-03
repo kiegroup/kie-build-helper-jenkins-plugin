@@ -15,8 +15,20 @@
     <f:entry title="GitHub OAuth token" field="ghOAuthToken" description="Authentication token used to call GitHub REST API">
       <f:password/>
     </f:entry>
-    <f:entry title="Maven repo cache zip URL" field="mavenRepoCacheZipUrl" description="Maven repo cache used to speed-up builds">
+    <f:entry title="Maven repo cache tgz URL" field="mavenRepoCacheTgzUrl" description="URL for .tgz file with Maven repo cache used to speed-up builds.">
       <f:textbox/>
+    </f:entry>
+    <f:entry title="Maven home dir" field="mavenHome" description="Maven home directory (e.g. /opt/tools/apache-maven-3.2.3)">
+      <f:textbox default="/opt/tools/apache-maven-3.2.3"/>
+    </f:entry>
+    <f:entry title="MAVEN_OPTS" field="mavenOpts" description="Value of MAVEN_OPTS environment variable">
+      <f:textbox default="-XX:MaxPermSize=256m -Xmx3g"/>
+    </f:entry>
+    <f:entry title="Upstream builds Maven arg. line" field="upstreamBuildsMavenArgLine" description="Maven argument line (contains goals, properties, profiles, etc) for upstream builds">
+      <f:textbox default="-B -e -T2C clean install -DskipTests -Dgwt.compiler.skip=true"/>
+    </f:entry>
+    <f:entry title="Downstream builds Maven arg. line" field="downstreamBuildsMavenArgLine" description="Maven argument line (contains goals, properties, profiles, etc) for downstream builds">
+      <f:textbox default="-B -e -T2C -Dmaven.test.failure.ignore=true -Dfull clean install"/>
     </f:entry>
   </f:section>
 </j:jelly>
