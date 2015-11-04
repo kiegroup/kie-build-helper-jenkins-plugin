@@ -18,19 +18,33 @@ package org.kie.jenkinsci.plugins.kieprbuildshelper;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 public class GitHubRepositoryListTest {
 
     @Test
-    public void testMasterRepositoryListLoadedSuccessfully() {
+    public void shouldSuccessfullyLoadListForMaster() {
         GitHubRepositoryList repoList = GitHubRepositoryList.fromClasspathResource(GitHubRepositoryList.KIE_REPO_LIST_MASTER_RESOURCE_PATH);
         Assert.assertEquals(24, repoList.size());
-        Assert.assertEquals(new GitHubRepository("uberfire", "uberfire"), repoList.getList().get(0));
-        Assert.assertEquals(new GitHubRepository("jboss-integration", "kie-eap-modules"), repoList.getList().get(23));
+        Assert.assertEquals(new KieGitHubRepository("uberfire", "uberfire"), repoList.getList().get(0));
+        Assert.assertEquals(new KieGitHubRepository("jboss-integration", "kie-eap-modules"), repoList.getList().get(23));
     }
 
     @Test (expected = IllegalArgumentException.class)
-    public void testReportsFailureForNonExistentResource() {
+    public void shouldReportFailureForNonExistentResource() {
         GitHubRepositoryList repoList = GitHubRepositoryList.fromClasspathResource("non-existing");
+    }
+
+    @Test
+    public void shouldFilterOutUFAndDashbuilderReposForDroolsRepo() {
+        GitHubRepositoryList ghList = GitHubRepositoryList.forBranch("master");
+        ghList.filterOutUnnecessaryUpstreamRepos("drools");
+        assertFalse(ghList.contains(new KieGitHubRepository("uberfire", "uberfire")));
+        assertFalse(ghList.contains(new KieGitHubRepository("uberfire", "uberfire-extensions")));
+        assertFalse(ghList.contains(new KieGitHubRepository("dashbuilder", "dashbuilder")));
+
+        assertTrue(ghList.contains(new KieGitHubRepository("droolsjbpm", "droolsjbpm-knowledge")));
     }
 
 }

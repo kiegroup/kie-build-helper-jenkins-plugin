@@ -20,6 +20,7 @@ import org.apache.commons.io.IOUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class GitHubRepositoryList {
@@ -27,7 +28,7 @@ public class GitHubRepositoryList {
     public static String KIE_REPO_LIST_6_3_X_RESOURCE_PATH = "/repository-list-6.3.x.txt";
     public static String KIE_REPO_LIST_6_2_X_RESOURCE_PATH = "/repository-list-6.2.x.txt";
 
-    private final List<GitHubRepository> list;
+    private final List<KieGitHubRepository> list;
 
     public static GitHubRepositoryList fromClasspathResource(String resourcePath) {
         InputStream is = GitHubRepositoryList.class.getResourceAsStream(resourcePath);
@@ -40,23 +41,55 @@ public class GitHubRepositoryList {
         } catch (IOException e) {
             throw new RuntimeException("Error while reading data from classpath resource '" + resourcePath + "'!", e);
         }
-        List<GitHubRepository> repoList = new ArrayList<GitHubRepository>();
+        List<KieGitHubRepository> list = new ArrayList<KieGitHubRepository>();
         for (String line : lines) {
             String[] parts = line.split("/");
-            repoList.add(new GitHubRepository(parts[0], parts[1]));
+            list.add(new KieGitHubRepository(parts[0], parts[1]));
         }
-        return new GitHubRepositoryList(repoList);
+        return new GitHubRepositoryList(list);
     }
 
-    public GitHubRepositoryList(List<GitHubRepository> list) {
+    public static GitHubRepositoryList forBranch(String branch) {
+        // TODO make this work OOTB when new branch is added
+        if ("master".equals(branch)) {
+            return KieRepositoryLists.getListForMasterBranch();
+        } else if (Arrays.asList("6.3.x", "0.7.x", "0.3.x").contains(branch)) {
+            return KieRepositoryLists.getListFor63xBranch();
+        } else if (Arrays.asList("6.2.x", "0.5.x", "0.2.x").contains(branch)) {
+            return KieRepositoryLists.getListFor62xBranch();
+        } else {
+            throw new IllegalArgumentException("Invalid PR target branch '" + branch + "'!");
+        }
+    }
+
+    public GitHubRepositoryList(List<KieGitHubRepository> list) {
         this.list = list;
     }
 
-    public List<GitHubRepository> getList() {
+    public List<KieGitHubRepository> getList() {
         return list;
     }
 
     public int size() {
         return list.size();
     }
+
+    public boolean contains(KieGitHubRepository repo) {
+        return list.contains(repo);
+    }
+
+    public void filterOutUnnecessaryUpstreamRepos(String prRepoName) {
+        if (Arrays.asList("droolsjbpm-knowledge", "drools", "optaplanner", "jbpm", "droolsjbpm-integration", "droolsjbpm-tools").contains(prRepoName)) {
+            list.remove(new KieGitHubRepository("uberfire", "uberfire"));
+            list.remove(new KieGitHubRepository("uberfire", "uberfire-extensions"));
+            list.remove(new KieGitHubRepository("dashbuilder", "dashbuilder"));
+        }
+        // nothing depends on stuff from -tools repo
+        list.remove(new KieGitHubRepository("droolsjbpm", "droolsjbpm-tools"));
+        // nothing really depends on optaplanner (maybe the optaplanner-wb but that's still not actively developed)
+        list.remove(new KieGitHubRepository("droolsjbpm", "optaplanner"));
+        // no need to build docs, they are pretty much standalone
+        list.remove(new KieGitHubRepository("droolsjbpm", "kie-docs"));
+    }
+
 }

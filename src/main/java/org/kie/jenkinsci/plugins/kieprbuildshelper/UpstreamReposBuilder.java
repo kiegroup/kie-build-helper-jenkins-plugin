@@ -92,7 +92,7 @@ public class UpstreamReposBuilder extends Builder {
             initFromEnvVars(envVars);
             FilePath workspace = build.getWorkspace();
 
-            GitHubRepositoryList kieRepoList = loadRepositoryList(prTargetBranch);
+            GitHubRepositoryList kieRepoList = GitHubRepositoryList.forBranch(prTargetBranch);
             KiePRBuildsHelper.KiePRBuildsHelperDescriptor globalSettings = KiePRBuildsHelper.getKiePRBuildsHelperDescriptor();
             String ghOAuthToken = globalSettings.getGhOAuthToken();
 
@@ -110,12 +110,12 @@ public class UpstreamReposBuilder extends Builder {
             GitHubPRSummary prSummary = GitHubPRSummary.fromPRLink(prLink, prSourceBranch, github);
 
             String prRepoName = prSummary.getTargetRepo();
-            filterOutUnnecessaryUpstreamRepos(prRepoName, kieRepoList.getList());
-            Map<GitHubRepository, String> upstreamRepos = gatherUpstreamReposToBuild(prRepoName, prSourceBranch, prTargetBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);
+            kieRepoList.filterOutUnnecessaryUpstreamRepos(prRepoName);
+            Map<KieGitHubRepository, String> upstreamRepos = gatherUpstreamReposToBuild(prRepoName, prSourceBranch, prTargetBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);
             // clone upstream repositories
             logUpstreamRepos(upstreamRepos);
-            for (Map.Entry<GitHubRepository, String> entry : upstreamRepos.entrySet()) {
-                GitHubRepository ghRepo = entry.getKey();
+            for (Map.Entry<KieGitHubRepository, String> entry : upstreamRepos.entrySet()) {
+                KieGitHubRepository ghRepo = entry.getKey();
                 String branch = entry.getValue();
                 FilePath repoDir = new FilePath(upstreamReposDir, ghRepo.getName());
                 ghCloneAndCheckout(ghRepo, branch, repoDir, listener);
@@ -127,8 +127,8 @@ public class UpstreamReposBuilder extends Builder {
             if (!mavenArgLine.contains("-Dmaven.repo.local=")) {
                 mavenArgLine = mavenArgLine + " -Dmaven.repo.local=" + new FilePath(workspace, ".repository").getRemote();
             }
-            for (Map.Entry<GitHubRepository, String> entry : upstreamRepos.entrySet()) {
-                GitHubRepository ghRepo = entry.getKey();
+            for (Map.Entry<KieGitHubRepository, String> entry : upstreamRepos.entrySet()) {
+                KieGitHubRepository ghRepo = entry.getKey();
                 buildMavenProject(new FilePath(upstreamReposDir, ghRepo.getName()), mavenHome, mavenArgLine, mavenOpts, launcher, listener, envVars);
             }
             buildLogger.println("Upstream repositories builder finished successfully.");
@@ -140,45 +140,15 @@ public class UpstreamReposBuilder extends Builder {
         return true;
     }
 
-    private void filterOutUnnecessaryUpstreamRepos(String prRepoName, List<GitHubRepository> repoList) {
-        if (Arrays.asList("droolsjbpm-knowledge", "drools", "optaplanner", "jbpm", "droolsjbpm-integration", "droolsjbpm-tools").contains(prRepoName)) {
-            repoList.remove(new GitHubRepository("uberfire", "uberfire"));
-            repoList.remove(new GitHubRepository("uberfire", "uberfire-extensions"));
-            repoList.remove(new GitHubRepository("dashbuilder", "dashbuilder"));
-        }
-        // nothing depends on stuff from -tools repo
-        repoList.remove(new GitHubRepository("droolsjbpm", "droolsjbpm-tools"));
-        // nothing really depends on optaplanner (maybe the optaplanner-wb but that's still not actively developed)
-        repoList.remove(new GitHubRepository("droolsjbpm", "optaplanner"));
-        // no need to build docs, they are pretty much standalone
-        repoList.remove(new GitHubRepository("droolsjbpm", "kie-docs"));
-    }
-
-    private void logUpstreamRepos(Map<GitHubRepository, String> upstreamRepos) {
+    private void logUpstreamRepos(Map<KieGitHubRepository, String> upstreamRepos) {
         if (upstreamRepos.size() > 0) {
             buildLogger.println("Upstream GitHub repositories that will be cloned and build:");
-            for (Map.Entry<GitHubRepository, String> entry : upstreamRepos.entrySet()) {
+            for (Map.Entry<KieGitHubRepository, String> entry : upstreamRepos.entrySet()) {
                 // print as <URL>:<branch>
                 buildLogger.println("\t" + entry.getKey().getReadOnlyCloneURL() + ":" + entry.getValue());
             }
         } else {
             buildLogger.println("No required upstream GitHub repositories found. This means the PR is not dependant on any upstream PR.");
-        }
-    }
-
-    private GitHubRepositoryList loadRepositoryList(String branch) {
-        // TODO make this work OOTB when new branch is added
-        if ("master".equals(branch)) {
-//            return GitHubRepositoryList.fromClasspathResource(GitHubRepositoryList.KIE_REPO_LIST_MASTER_RESOURCE_PATH);
-            return KIERepositoryLists.getListForMasterBranch();
-        } else if ("6.3.x".equals(branch)) {
-//            return GitHubRepositoryList.fromClasspathResource(GitHubRepositoryList.KIE_REPO_LIST_6_3_X_RESOURCE_PATH);
-            return KIERepositoryLists.getListFor63xBranch();
-        } else if ("6.2.x".equals(branch)) {
-//            return GitHubRepositoryList.fromClasspathResource(GitHubRepositoryList.KIE_REPO_LIST_6_2_X_RESOURCE_PATH);
-            return KIERepositoryLists.getListFor62xBranch();
-        } else {
-            throw new IllegalArgumentException("Invalid PR target branch '" + branch + "'! Only master, 6.3.x and 6.2.x supported!");
         }
     }
 
@@ -191,9 +161,9 @@ public class UpstreamReposBuilder extends Builder {
      * @param github         GitHub API object used to talk to GitHub REST interface
      * @return Map of upstream repositories (with specific branches) that need to be build before the base repository
      */
-    private Map<GitHubRepository, String> gatherUpstreamReposToBuild(String prRepoName, String prSourceBranch, String prTargetBranch, String prRepoOwner, GitHubRepositoryList kieRepoList, GitHub github) {
-        Map<GitHubRepository, String> upstreamRepos = new LinkedHashMap<GitHubRepository, String>();
-        for (GitHubRepository kieRepo : kieRepoList.getList()) {
+    private Map<KieGitHubRepository, String> gatherUpstreamReposToBuild(String prRepoName, String prSourceBranch, String prTargetBranch, String prRepoOwner, GitHubRepositoryList kieRepoList, GitHub github) {
+        Map<KieGitHubRepository, String> upstreamRepos = new LinkedHashMap<KieGitHubRepository, String>();
+        for (KieGitHubRepository kieRepo : kieRepoList.getList()) {
             String kieRepoName = kieRepo.getName();
             if (kieRepoName.equals(prRepoName)) {
                 // we encountered the base repo, so all upstream repos were already processed and we can return the result
@@ -201,75 +171,16 @@ public class UpstreamReposBuilder extends Builder {
             }
             if (checkBranchExists(prRepoOwner + "/" + kieRepoName, prSourceBranch, github) &&
                     checkHasOpenPRAssociated(kieRepo.getOwner() + "/" + kieRepoName, prSourceBranch, prRepoOwner, github)) {
-                upstreamRepos.put(new GitHubRepository(prRepoOwner, kieRepoName), prSourceBranch);
+                upstreamRepos.put(new KieGitHubRepository(prRepoOwner, kieRepoName), prSourceBranch);
             } else {
                 // otherwise just use the current target branch for that repo (we will build the most up to date sources)
                 // this gets a little tricky as we need figure out which uberfire branch matches the target branches for KIE
                 // e.g. for KIE 6.3.x branch we need UF 0.7.x and Dashuilder 0.3.x branches
-                String baseBranch = determineBaseBranch(kieRepo, prRepoName, prTargetBranch);
+                String baseBranch = kieRepo.determineBaseBranch(prRepoName, prTargetBranch);
                 upstreamRepos.put(kieRepo, baseBranch);
             }
         }
         return upstreamRepos;
-    }
-
-    /**
-     * Determines base branch for specified repository. This is used to clone repositories which do not directly
-     * contain any specific changes. Building those base branches will decrease the number of false negatives caused
-     * by stale snapshots, as we will always have the latest sources available.
-     *
-     * @param ghRepo         GitHub repository we want to get the branch for
-     * @param prRepoName     repository name against which the PR was submitted
-     * @param prTargetBranch target branch specified in the PR
-     * @return name of the base branch which matches the target PR branch
-     */
-    private String determineBaseBranch(GitHubRepository ghRepo, String prRepoName, String prTargetBranch) {
-        // all UF repositories share the branch names, so if the PR is against UF repo, the branch will always
-        // be the same as the PR target branch
-        if (prRepoName.startsWith("uberfire")) {
-            return prTargetBranch;
-        } else if (prRepoName.equals("dashbuilder")) {
-            if ("master".equals(prTargetBranch)) {
-                return "master";
-            } else if ("0.7.x".equals(prTargetBranch)) {
-                return "0.3.x";
-            } else if ("0.5.x".equals(prTargetBranch)) {
-                return "0.2.x";
-            } else {
-                throw new IllegalArgumentException("Invalid PR target branch for repo '" + prRepoName + "': " + prTargetBranch);
-            }
-        } else {
-            // assume the repo is one of the core KIE repos (starting from droolsjbpm-build-bootstrap)
-            if ("master".equals(prTargetBranch)) {
-                return "master";
-            } else if ("6.3.x".equals(prTargetBranch)) {
-                if (isUberFireRepo(ghRepo)) {
-                    return "0.7.x";
-                } else if (isDashbuilderRepo(ghRepo)) {
-                    return "0.3.x";
-                } else {
-                    return "6.3.x";
-                }
-            } else if ("6.2.x".equals(prTargetBranch)) {
-                if (isUberFireRepo(ghRepo)) {
-                    return "0.5.x";
-                } else if (isDashbuilderRepo(ghRepo)) {
-                    return "0.2.x";
-                } else {
-                    return "6.2.x";
-                }
-            } else {
-                throw new IllegalArgumentException("Invalid PR target branch for repo '" + prRepoName + "': " + prTargetBranch);
-            }
-        }
-    }
-
-    private boolean isUberFireRepo(GitHubRepository repo) {
-        return repo.getName().startsWith("uberfire");
-    }
-
-    private boolean isDashbuilderRepo(GitHubRepository repo) {
-        return repo.getName().startsWith("dashbuilder");
     }
 
     /**
@@ -328,7 +239,7 @@ public class UpstreamReposBuilder extends Builder {
      * @param buildListener Jenkins BuildListener used by the GitClient to print status info
      * @throws IOException, InterruptedException
      */
-    private void ghCloneAndCheckout(GitHubRepository ghRepo, String branch, FilePath destDir, BuildListener buildListener) throws IOException, InterruptedException {
+    private void ghCloneAndCheckout(KieGitHubRepository ghRepo, String branch, FilePath destDir, BuildListener buildListener) throws IOException, InterruptedException {
         destDir.mkdirs();
         GitClient git = Git.with(buildListener, new EnvVars())
                 .in(destDir)

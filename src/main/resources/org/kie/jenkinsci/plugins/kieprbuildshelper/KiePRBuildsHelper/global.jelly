@@ -28,7 +28,7 @@
       <f:textbox default="-B -e -T2C clean install -DskipTests -Dgwt.compiler.skip=true"/>
     </f:entry>
     <f:entry title="Downstream builds Maven arg. line" field="downstreamBuildsMavenArgLine" description="Maven argument line (contains goals, properties, profiles, etc) for downstream builds">
-      <f:textbox default="-B -e -T2C -Dmaven.test.failure.ignore=true -Dfull clean install"/>
+      <f:textbox default="-B -e -T2C -Dmaven.test.failure.ignore=true clean install"/>
     </f:entry>
   </f:section>
 </j:jelly>
