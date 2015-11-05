@@ -22,30 +22,26 @@ import org.kohsuke.stapler.StaplerRequest;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Custom {@link Builder} which allows building upstream repositories during automated PR builds.
- * <p>
+ * <p/>
  * Building upstream repositories is usually needed when there are dependant PRs submitted into
  * different repositories.
- * <p>
- * <p>
+ * <p/>
  * When the user configures the project and enables this builder,
  * {@link Descriptor#newInstance(StaplerRequest)} is invoked
  * and a new {@link KiePRBuildsHelper} is created. The created
  * instance is persisted to the project configuration XML by using
  * XStream, so this allows you to use instance fields
  * to remember the configuration.
- * <p>
- * <p>
+ * <p/>
  * When a build is performed, the {@link #perform(AbstractBuild, Launcher, BuildListener)}
  * method will be invoked.
- * <p>
- * <p>
+ * <p/>
  * What the builder does:
  * - collects info about the current PR and repository
  * - clones all needed upstream repos
@@ -63,7 +59,7 @@ public class UpstreamReposBuilder extends Builder {
     }
 
     /**
-     * Initializes the fields from passed Environmental Variables and BuildListener
+     * Initializes the fields from passed Environmental Variables
      */
     public void initFromEnvVars(EnvVars envVars) {
         prLink = envVars.get("ghprbPullLink");
@@ -111,7 +107,8 @@ public class UpstreamReposBuilder extends Builder {
 
             String prRepoName = prSummary.getTargetRepo();
             kieRepoList.filterOutUnnecessaryUpstreamRepos(prRepoName);
-            Map<KieGitHubRepository, String> upstreamRepos = gatherUpstreamReposToBuild(prRepoName, prSourceBranch, prTargetBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);
+            Map<KieGitHubRepository, String> upstreamRepos =
+                    gatherUpstreamReposToBuild(prRepoName, prSourceBranch, prTargetBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);
             // clone upstream repositories
             logUpstreamRepos(upstreamRepos);
             for (Map.Entry<KieGitHubRepository, String> entry : upstreamRepos.entrySet()) {
@@ -131,12 +128,11 @@ public class UpstreamReposBuilder extends Builder {
                 KieGitHubRepository ghRepo = entry.getKey();
                 buildMavenProject(new FilePath(upstreamReposDir, ghRepo.getName()), mavenHome, mavenArgLine, mavenOpts, launcher, listener, envVars);
             }
-            buildLogger.println("Upstream repositories builder finished successfully.");
         } catch (Exception ex) {
-            listener.getLogger().println("Unexpected error while executing the UpstreamReposBuilder! " + ex.getMessage());
-            buildLogger.println("Upstream repositories builder finished with error!");
+            buildLogger.println("Unexpected error while executing the UpstreamReposBuilder! " + ex.getMessage());
             return false;
         }
+        buildLogger.println("Upstream repositories builder finished successfully.");
         return true;
     }
 
@@ -144,11 +140,11 @@ public class UpstreamReposBuilder extends Builder {
         if (upstreamRepos.size() > 0) {
             buildLogger.println("Upstream GitHub repositories that will be cloned and build:");
             for (Map.Entry<KieGitHubRepository, String> entry : upstreamRepos.entrySet()) {
-                // print as <URL>:<branch>
+                // print as '<URL>:<branch>'
                 buildLogger.println("\t" + entry.getKey().getReadOnlyCloneURL() + ":" + entry.getValue());
             }
         } else {
-            buildLogger.println("No required upstream GitHub repositories found. This means the PR is not dependant on any upstream PR.");
+            buildLogger.println("No required upstream GitHub repositories found.");
         }
     }
 
@@ -185,7 +181,7 @@ public class UpstreamReposBuilder extends Builder {
 
     /**
      * Checks whether GitHub repository has specific branch.
-     * <p>
+     * <p/>
      * Used to check if the fork has the same branch as repo with PR.
      *
      * @param fullRepoName full GitHub repository name (owner + name)
