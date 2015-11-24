@@ -1,0 +1,50 @@
+:numbered:
+= kie-build-helper-jenkins-plugin
+
+Simple Jenkins plugin which helps with automation of KIE CI builds. Tightly coupled with KIE and our workflows.
+
+== Why Jenkins plugin?
+Jenkins plugin was chosen after some experimentation with BASH/Groovy scripts. Scripts get messy very fast and it is also
+usually harder to test them. The plugin nicely encapsulate the needed logic into build steps. This leads to cleaner
+and maintainable jobs as the configuration is not cluttered with scripts execution.
+
+Jenkins as a system also provides great support for plugins and creating one is rather easy. The only disadvantage is
+that the plugin upgrade usually requires Jenkins restart.
+
+== Available extension points
+The plugin provides few extension points which can be leveraged in Jenkins jobs.
+
+==== Prepare Maven repo cache
+This is a build step which takes care of downloading Maven repo cache archive and unpacking the content into `$WORKSPACE/.repository`
+so that it can be used by subsequent Maven executions. It is not strictly necessary to use this step, but it greatly speeds up the build
+in case the local repository is empty at the start (which should be the case for multi-repo PR builds). The archive URL is stored in global
+configuration. It is currently not possible to use different cache archives for different jobs.
+
+==== Upstream repositories builder
+This is a build step which adds support for building upstream repositories. Term upstream repository describes a
+repository which needs be built before some other repository (same relation as upstream Jenkins jobs). This is particularly useful
+for Pull Request (PR) which span multiple repositories. In order to make sure the build passes in one repository, Jenkins
+needs to use correct fork and branch which contains additional changes in one or more of the upstream repositories. Dependent PRs
+are matched by branch name (e.g. same branch name needs to be used for both PRs which are in different repositories).
+The relation between repositories is currently hard-coded in the plugin logic.
+
+== Installing the plugin
+The plugin is not available in any public Jenkins repository, and likely will never be, as the plugin is very tightly coupled
+with our workflows and in the current form is not re-usable outside of KIE builds. When installing the plugin one needs to manually
+build this project by running `mvn clean package` and upload the resulting `.hpi` file using the Jenkins UI. To upload the newly
+built plugin go to `Manage Jenkins -> Manage Plugins -> Advanced`, choose the `.hpi` file under `Upload Plugin` section
+and click `Upload`. You will also need to restart the Jenkins, so that it can pick up the new plugin version.
+
+== Configuration
+Plugin stores common configuration as a section in global Jenkins configuration (`Manage Jenkins -> Configure System`).
+For upstream repositories builder you need to configure GitHub access token, otherwise the plugin won't be able to communicate
+with the GitHub's REST API (see https://help.github.com/articles/creating-an-access-token-for-command-line-use/[Creating access token]
+for a more info). You can also specify URL of tar.gz archive with the Maven repo cache content and additional
+Maven related configuration options like MAVEN_HOME, MAVEN_OPTS and argument lines for upstream builds.
+
+In case you want to use one of the extension points specified above, just go to your job configuration and add specific build steps.
+
+== TODOs
+  * use https://wiki.jenkins-ci.org/display/JENKINS/Credentials+Plugin[Credentials Plugin] to store/retrieve the GitHub API access token
+  * add support for downstream builds with full test execution
+  * add extension (build step) for automated creation of new GitHub PRs
