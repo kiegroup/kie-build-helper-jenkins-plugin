@@ -48,86 +48,9 @@ public class KieGitHubRepository {
      * @return name of the base branch which matches the target PR branch
      */
     public String determineBaseBranch(String prRepoName, String prTargetBranch) {
-        // all UF repositories share the branch names, so if the PR is against UF repo, the branch will always
-        // be the same as the PR target branch
-        // TODO the above is only true for upstream builds. Needs fixed for downstream builds
-
-        // PRs for UberFire repos
-        if (prRepoName.startsWith("uberfire")) {
-            if ("master".equals(prTargetBranch)) {
-                return "master";
-            } else if ("0.7.x".equals(prTargetBranch)) {
-                if (isUberFireRepo()) {
-                    return "0.7.x";
-                } else if (isDashbuilderRepo()) {
-                    return "0.3.x";
-                } else {
-                    return "6.3.x";
-                }
-            } else if ("0.5.x".equals(prTargetBranch)) {
-                if (isUberFireRepo()) {
-                    return "0.5.x";
-                } else if (isDashbuilderRepo()) {
-                    return "0.2.x";
-                } else {
-                    return "6.2.x";
-                }
-            } else {
-                throw new IllegalArgumentException("Invalid PR target branch for repo '" + prRepoName + "': " + prTargetBranch);
-            }
-        // PRs for dashbuilder repo
-        } else if (prRepoName.equals("dashbuilder")) {
-            if ("master".equals(prTargetBranch)) {
-                return "master";
-            } else if ("0.3.x".equals(prTargetBranch)) {
-                if (isUberFireRepo()) {
-                    return "0.7.x";
-                } else {
-                    return "6.3.x";
-                }
-            } else if ("0.2.x".equals(prTargetBranch)) {
-                if (isUberFireRepo()) {
-                    return "0.5.x";
-                } else {
-                    return "6.2.x";
-                }
-            } else {
-                throw new IllegalArgumentException("Invalid PR target branch for repo '" + prRepoName + "': " + prTargetBranch);
-            }
-        // PRs for droolsjbpm repos
-        } else {
-            // assume the repo is one of the core KIE repos (starting from droolsjbpm-build-bootstrap)
-            if ("master".equals(prTargetBranch)) {
-                return "master";
-            } else if ("6.3.x".equals(prTargetBranch)) {
-                if (isUberFireRepo()) {
-                    return "0.7.x";
-                } else if (isDashbuilderRepo()) {
-                    return "0.3.x";
-                } else {
-                    return "6.3.x";
-                }
-            } else if ("6.2.x".equals(prTargetBranch)) {
-                if (isUberFireRepo()) {
-                    return "0.5.x";
-                } else if (isDashbuilderRepo()) {
-                    return "0.2.x";
-                } else {
-                    return "6.2.x";
-                }
-            } else {
-                throw new IllegalArgumentException("Invalid PR target branch for repo '" + prRepoName + "': " + prTargetBranch);
-            }
-        }
+        return KieRepositoryLists.getBaseBranchFor(this.name, prRepoName, prTargetBranch);
     }
 
-    private boolean isUberFireRepo() {
-        return this.name.startsWith("uberfire");
-    }
-
-    private boolean isDashbuilderRepo() {
-        return this.name.startsWith("dashbuilder");
-    }
 
     @Override
     public String toString() {

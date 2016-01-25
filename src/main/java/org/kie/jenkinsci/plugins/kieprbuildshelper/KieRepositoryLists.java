@@ -50,6 +50,36 @@ public class KieRepositoryLists {
         return new GitHubRepositoryList(repos);
     }
 
+    public static GitHubRepositoryList getListFor64xBranch() {
+        List<KieGitHubRepository> repos = new ArrayList<KieGitHubRepository>() {{
+            add(new KieGitHubRepository("uberfire", "uberfire"));
+            add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
+            add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
+            add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-build-bootstrap"));
+            add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-knowledge"));
+            add(new KieGitHubRepository("droolsjbpm", "drools"));
+            add(new KieGitHubRepository("droolsjbpm", "optaplanner"));
+            add(new KieGitHubRepository("droolsjbpm", "jbpm"));
+            add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-integration"));
+            add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-tools"));
+            add(new KieGitHubRepository("droolsjbpm", "kie-uberfire-extensions"));
+            add(new KieGitHubRepository("droolsjbpm", "guvnor"));
+            add(new KieGitHubRepository("droolsjbpm", "kie-wb-common"));
+            add(new KieGitHubRepository("droolsjbpm", "jbpm-form-modeler"));
+            add(new KieGitHubRepository("droolsjbpm", "drools-wb"));
+            add(new KieGitHubRepository("droolsjbpm", "jbpm-designer"));
+            add(new KieGitHubRepository("droolsjbpm", "jbpm-console-ng"));
+            add(new KieGitHubRepository("droolsjbpm", "dashboard-builder"));
+            add(new KieGitHubRepository("droolsjbpm", "optaplanner-wb"));
+            add(new KieGitHubRepository("droolsjbpm", "jbpm-dashboard"));
+            add(new KieGitHubRepository("droolsjbpm", "kie-docs"));
+            add(new KieGitHubRepository("droolsjbpm", "kie-wb-distributions"));
+            add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-build-distribution"));
+            add(new KieGitHubRepository("jboss-integration", "kie-eap-modules"));
+        }};
+        return new GitHubRepositoryList(repos);
+    }
+
     public static GitHubRepositoryList getListFor63xBranch() {
         List<KieGitHubRepository> repos = new ArrayList<KieGitHubRepository>() {{
             add(new KieGitHubRepository("uberfire", "uberfire"));
@@ -107,4 +137,72 @@ public class KieRepositoryLists {
         }};
         return new GitHubRepositoryList(repos);
     }
+
+    private static final List<BranchMapping> BRANCH_MAPPINGS = initMappings();
+
+    private static List<BranchMapping> initMappings() {
+        List<BranchMapping> mappings = new ArrayList<>();
+        mappings.add(new BranchMapping("master", "master", "master"));
+        mappings.add(new BranchMapping("0.8.x", "0.4.x", "6.4.x"));
+        mappings.add(new BranchMapping("0.7.x", "0.3.x", "6.3.x"));
+        mappings.add(new BranchMapping("0.5.x", "0.2.x", "6.2.x"));
+        return mappings;
+    }
+
+    public static String getBaseBranchFor(String repo, String otherRepo, String otherBranch) {
+        BranchMapping mapping = getMapping(otherRepo, otherBranch);
+        if (isUberFireRepo(repo)) {
+            return mapping.getUfBranch();
+        } else if (isDashbuilderRepo(repo)) {
+            return mapping.getDashBranch();
+        } else {
+            return mapping.getKieBranch();
+        }
+    }
+
+    private static BranchMapping getMapping(String repoName, String branch) {
+        for (BranchMapping mapping : BRANCH_MAPPINGS) {
+            if (isUberFireRepo(repoName) && mapping.getUfBranch().equals(branch)) {
+                return mapping;
+            } else if (isDashbuilderRepo(repoName) && mapping.getDashBranch().equals(branch)) {
+                return mapping;
+            } else if (mapping.getKieBranch().equals(branch)) {
+                return mapping;
+            }
+        }
+        throw new RuntimeException("No branch mapping found for repo " + repoName + " with branch " + branch);
+    }
+
+    private static boolean isUberFireRepo(String repoName) {
+        return repoName.startsWith("uberfire");
+    }
+
+    private static boolean isDashbuilderRepo(String repoName) {
+        return repoName.startsWith("dashbuilder");
+    }
+
+    public static class BranchMapping {
+        private final String ufBranch;
+        private final String dashBranch;
+        private final String kieBranch;
+
+        public BranchMapping(String ufBranch, String dashBranch, String kieBranch) {
+            this.ufBranch = ufBranch;
+            this.dashBranch = dashBranch;
+            this.kieBranch = kieBranch;
+        }
+
+        public String getUfBranch() {
+            return ufBranch;
+        }
+
+        public String getDashBranch() {
+            return dashBranch;
+        }
+
+        public String getKieBranch() {
+            return kieBranch;
+        }
+    }
+
 }

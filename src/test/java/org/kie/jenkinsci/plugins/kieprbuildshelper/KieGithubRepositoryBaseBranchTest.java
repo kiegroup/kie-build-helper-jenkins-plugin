@@ -38,7 +38,16 @@ public class KieGithubRepositoryBaseBranchTest {
                 {new KieGitHubRepository("uberfire", "uberfire-extensions"), "guvnor", "master", "master"},
                 {new KieGitHubRepository("dashbuilder", "dashbuilder"), "guvnor", "master", "master"},
                 {new KieGitHubRepository("droolsjbpm", "guvnor"), "jbpm-console-ng", "master", "master"},
-                // upstream repo builds, 6.3.x+0.3.x+0.7.x branches
+                // upstream repo builds, 0.8.x + 0.4.x + 6.4.x branches
+                {new KieGitHubRepository("uberfire", "uberfire"), "uberfire", "0.8.x", "0.8.x"},
+                {new KieGitHubRepository("uberfire", "uberfire"), "uberfire-extensions", "0.8.x", "0.8.x"},
+                {new KieGitHubRepository("uberfire", "uberfire"), "dashbuilder", "0.4.x", "0.8.x"},
+                {new KieGitHubRepository("uberfire", "uberfire-extensions"), "dashbuilder", "0.4.x", "0.8.x"},
+                {new KieGitHubRepository("uberfire", "uberfire"), "guvnor", "6.4.x", "0.8.x"},
+                {new KieGitHubRepository("uberfire", "uberfire-extensions"), "guvnor", "6.4.x", "0.8.x"},
+                {new KieGitHubRepository("dashbuilder", "dashbuilder"), "guvnor", "6.4.x", "0.4.x"},
+                {new KieGitHubRepository("droolsjbpm", "guvnor"), "jbpm-console-ng", "6.4.x", "6.4.x"},
+                // upstream repo builds, 0.7.x + 0.3.x + 6.3.x branches
                 {new KieGitHubRepository("uberfire", "uberfire"), "uberfire", "0.7.x", "0.7.x"},
                 {new KieGitHubRepository("uberfire", "uberfire"), "uberfire-extensions", "0.7.x", "0.7.x"},
                 {new KieGitHubRepository("uberfire", "uberfire"), "dashbuilder", "0.3.x", "0.7.x"},
@@ -47,7 +56,7 @@ public class KieGithubRepositoryBaseBranchTest {
                 {new KieGitHubRepository("uberfire", "uberfire-extensions"), "guvnor", "6.3.x", "0.7.x"},
                 {new KieGitHubRepository("dashbuilder", "dashbuilder"), "guvnor", "6.3.x", "0.3.x"},
                 {new KieGitHubRepository("droolsjbpm", "guvnor"), "jbpm-console-ng", "6.3.x", "6.3.x"},
-                // upstream repo builds, 6.2.x+0.2.x+0.5.x branches
+                // upstream repo builds, 0.5.x  + 0.2.x + 6.2.x branches
                 {new KieGitHubRepository("uberfire", "uberfire"), "uberfire", "0.5.x", "0.5.x"},
                 {new KieGitHubRepository("uberfire", "uberfire"), "uberfire-extensions", "0.5.x", "0.5.x"},
                 {new KieGitHubRepository("uberfire", "uberfire"), "dashbuilder", "0.2.x", "0.5.x"},
@@ -61,7 +70,7 @@ public class KieGithubRepositoryBaseBranchTest {
     }
 
     @Parameterized.Parameter(0)
-    public KieGitHubRepository kieRepo;
+    public KieGitHubRepository repo;
 
     @Parameterized.Parameter(1)
     public String prRepo;
@@ -74,7 +83,7 @@ public class KieGithubRepositoryBaseBranchTest {
 
     @Test
     public void test() {
-        String baseBranch = kieRepo.determineBaseBranch(prRepo, prTargetBranch);
+        String baseBranch = KieRepositoryLists.getBaseBranchFor(repo.getName(), prRepo, prTargetBranch);
         assertEquals(expectedBaseBranch, baseBranch);
     }
 }

@@ -53,6 +53,8 @@ public class GitHubRepositoryList {
         // TODO make this work OOTB when new branch is added
         if ("master".equals(branch)) {
             return KieRepositoryLists.getListForMasterBranch();
+        } else if (Arrays.asList("6.4.x", "0.8.x", "0.4.x").contains(branch)) {
+            return KieRepositoryLists.getListFor64xBranch();
         } else if (Arrays.asList("6.3.x", "0.7.x", "0.3.x").contains(branch)) {
             return KieRepositoryLists.getListFor63xBranch();
         } else if (Arrays.asList("6.2.x", "0.5.x", "0.2.x").contains(branch)) {
