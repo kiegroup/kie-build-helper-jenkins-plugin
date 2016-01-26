@@ -88,8 +88,6 @@ public class GitHubRepositoryList {
         }
         // nothing depends on stuff from -tools repo
         list.remove(new KieGitHubRepository("droolsjbpm", "droolsjbpm-tools"));
-        // nothing really depends on optaplanner (maybe the optaplanner-wb but that's still not actively developed)
-        list.remove(new KieGitHubRepository("droolsjbpm", "optaplanner"));
         // no need to build docs, they are pretty much standalone
         list.remove(new KieGitHubRepository("droolsjbpm", "kie-docs"));
     }
