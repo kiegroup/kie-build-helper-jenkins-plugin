@@ -31,6 +31,9 @@ public class KieGithubRepositoryBaseBranchTest {
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
                 // upstream repo builds, master branch
+                {new KieGitHubRepository("errai", "errai"), "uberfire", "master", "master"},
+                {new KieGitHubRepository("errai", "errai"), "dashbuilder", "master", "master"},
+                {new KieGitHubRepository("errai", "errai"), "guvnor", "master", "master"},
                 {new KieGitHubRepository("uberfire", "uberfire"), "uberfire", "master", "master"},
                 {new KieGitHubRepository("uberfire", "uberfire"), "uberfire-extensions", "master", "master"},
                 {new KieGitHubRepository("uberfire", "uberfire"), "dashbuilder", "master", "master"},
@@ -39,6 +42,9 @@ public class KieGithubRepositoryBaseBranchTest {
                 {new KieGitHubRepository("dashbuilder", "dashbuilder"), "guvnor", "master", "master"},
                 {new KieGitHubRepository("droolsjbpm", "guvnor"), "jbpm-console-ng", "master", "master"},
                 // upstream repo builds, 0.8.x + 0.4.x + 6.4.x branches
+                {new KieGitHubRepository("errai", "errai"), "uberfire", "0.8.x", "3.2"},
+                {new KieGitHubRepository("errai", "errai"), "dashbuilder", "0.4.x", "3.2"},
+                {new KieGitHubRepository("errai", "errai"), "dashbuilder", "6.4.x", "3.2"},
                 {new KieGitHubRepository("uberfire", "uberfire"), "uberfire", "0.8.x", "0.8.x"},
                 {new KieGitHubRepository("uberfire", "uberfire"), "uberfire-extensions", "0.8.x", "0.8.x"},
                 {new KieGitHubRepository("uberfire", "uberfire"), "dashbuilder", "0.4.x", "0.8.x"},

@@ -22,6 +22,7 @@ public class KieRepositoryLists {
 
     public static GitHubRepositoryList getListForMasterBranch() {
         List<KieGitHubRepository> repos = new ArrayList<KieGitHubRepository>() {{
+            add(new KieGitHubRepository("errai", "errai"));
             add(new KieGitHubRepository("uberfire", "uberfire"));
             add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
             add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
@@ -52,6 +53,7 @@ public class KieRepositoryLists {
 
     public static GitHubRepositoryList getListFor64xBranch() {
         List<KieGitHubRepository> repos = new ArrayList<KieGitHubRepository>() {{
+            add(new KieGitHubRepository("errai", "errai"));
             add(new KieGitHubRepository("uberfire", "uberfire"));
             add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
             add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
@@ -142,8 +144,9 @@ public class KieRepositoryLists {
 
     private static List<BranchMapping> initMappings() {
         List<BranchMapping> mappings = new ArrayList<>();
-        mappings.add(new BranchMapping("master", "master", "master"));
-        mappings.add(new BranchMapping("0.8.x", "0.4.x", "6.4.x"));
+        // branches for errai, uf, dashbuilder, kie
+        mappings.add(new BranchMapping("master", "master", "master", "master"));
+        mappings.add(new BranchMapping("3.2", "0.8.x", "0.4.x", "6.4.x"));
         mappings.add(new BranchMapping("0.7.x", "0.3.x", "6.3.x"));
         mappings.add(new BranchMapping("0.5.x", "0.2.x", "6.2.x"));
         return mappings;
@@ -151,7 +154,9 @@ public class KieRepositoryLists {
 
     public static String getBaseBranchFor(String repo, String otherRepo, String otherBranch) {
         BranchMapping mapping = getMapping(otherRepo, otherBranch);
-        if (isUberFireRepo(repo)) {
+        if (isErraiRepo(repo)) {
+            return mapping.getErraiBranch();
+        }else if (isUberFireRepo(repo)) {
             return mapping.getUfBranch();
         } else if (isDashbuilderRepo(repo)) {
             return mapping.getDashBranch();
@@ -162,7 +167,9 @@ public class KieRepositoryLists {
 
     private static BranchMapping getMapping(String repoName, String branch) {
         for (BranchMapping mapping : BRANCH_MAPPINGS) {
-            if (isUberFireRepo(repoName) && mapping.getUfBranch().equals(branch)) {
+            if (isErraiRepo(repoName) && mapping.getErraiBranch() != null && mapping.getErraiBranch().equals(branch)) {
+                return mapping;
+            } else if (isUberFireRepo(repoName) && mapping.getUfBranch().equals(branch)) {
                 return mapping;
             } else if (isDashbuilderRepo(repoName) && mapping.getDashBranch().equals(branch)) {
                 return mapping;
@@ -173,6 +180,9 @@ public class KieRepositoryLists {
         throw new RuntimeException("No branch mapping found for repo " + repoName + " with branch " + branch);
     }
 
+    private static boolean isErraiRepo(String repoName) {
+        return repoName.startsWith("errai");
+    }
     private static boolean isUberFireRepo(String repoName) {
         return repoName.startsWith("uberfire");
     }
@@ -182,14 +192,31 @@ public class KieRepositoryLists {
     }
 
     public static class BranchMapping {
+        /**
+         * Can be null, because not all KIE branches depend on SNAPSHOTs
+         * (and thus don't need to build the Errai for every PR)
+         */
+        private final String erraiBranch;
         private final String ufBranch;
         private final String dashBranch;
         private final String kieBranch;
 
-        public BranchMapping(String ufBranch, String dashBranch, String kieBranch) {
+        public BranchMapping(String erraiBranch, String ufBranch, String dashBranch, String kieBranch) {
+            this.erraiBranch = erraiBranch;
             this.ufBranch = ufBranch;
             this.dashBranch = dashBranch;
             this.kieBranch = kieBranch;
+        }
+
+        public BranchMapping(String ufBranch, String dashBranch, String kieBranch) {
+            this.erraiBranch = null;
+            this.ufBranch = ufBranch;
+            this.dashBranch = dashBranch;
+            this.kieBranch = kieBranch;
+        }
+
+        public String getErraiBranch() {
+            return erraiBranch;
         }
 
         public String getUfBranch() {

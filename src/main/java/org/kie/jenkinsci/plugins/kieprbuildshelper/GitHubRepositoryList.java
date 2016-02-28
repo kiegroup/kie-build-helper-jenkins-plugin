@@ -82,6 +82,7 @@ public class GitHubRepositoryList {
 
     public void filterOutUnnecessaryUpstreamRepos(String prRepoName) {
         if (Arrays.asList("droolsjbpm-knowledge", "drools", "optaplanner", "jbpm", "droolsjbpm-integration", "droolsjbpm-tools").contains(prRepoName)) {
+            list.remove(new KieGitHubRepository("errai", "errai"));
             list.remove(new KieGitHubRepository("uberfire", "uberfire"));
             list.remove(new KieGitHubRepository("uberfire", "uberfire-extensions"));
             list.remove(new KieGitHubRepository("dashbuilder", "dashbuilder"));
