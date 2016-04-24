@@ -4,7 +4,6 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.Proc;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
@@ -83,7 +82,7 @@ public class UpstreamReposBuilder extends Builder {
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) {
         try {
             buildLogger = listener.getLogger();
-            buildLogger.println("Upstream repositories builder started.");
+            buildLogger.println("Upstream repositories builder for PR builds started.");
             EnvVars envVars = build.getEnvironment(launcher.getListener());
             initFromEnvVars(envVars);
             FilePath workspace = build.getWorkspace();
@@ -126,10 +125,13 @@ public class UpstreamReposBuilder extends Builder {
             }
             for (Map.Entry<KieGitHubRepository, String> entry : upstreamRepos.entrySet()) {
                 KieGitHubRepository ghRepo = entry.getKey();
-                buildMavenProject(new FilePath(upstreamReposDir, ghRepo.getName()), mavenHome, mavenArgLine, mavenOpts, launcher, listener, envVars);
+                MavenProject mavenProject = new MavenProject(new FilePath(upstreamReposDir,
+                        ghRepo.getName()), mavenHome, mavenOpts, launcher, listener);
+                mavenProject.build(mavenArgLine, envVars, buildLogger);
             }
         } catch (Exception ex) {
             buildLogger.println("Unexpected error while executing the UpstreamReposBuilder! " + ex.getMessage());
+            ex.printStackTrace(buildLogger);
             return false;
         }
         buildLogger.println("Upstream repositories builder finished successfully.");
@@ -245,37 +247,7 @@ public class UpstreamReposBuilder extends Builder {
         git.checkoutBranch(branch, "origin/" + branch);
     }
 
-    /**
-     * Builds Maven project from the specified working directory (contains pom.xml).
-     *
-     * @param projectBasedir directory with pom.xml file
-     * @param mavenHome      home directory of Maven installation that should be used
-     * @param mavenArgLine   Maven argument line with goals, profiles, etc
-     * @param mavenOpts      contents MAVEN_OPTS variables
-     * @param launcher       Jenkins launcher
-     * @param listener       Jenkins build listener
-     * @param envVars        environmental variables passed to the Maven process
-     */
-    private void buildMavenProject(FilePath projectBasedir, String mavenHome, String mavenArgLine, String mavenOpts, Launcher launcher, BuildListener listener, EnvVars envVars) {
-        int exitCode;
-        try {
-            envVars.put("MAVEN_OPTS", mavenOpts);
-            buildLogger.println("MAVEN_OPTS=" + envVars.get("MAVEN_OPTS"));
-            Proc proc = launcher.launch()
-                    .cmdAsSingleString(mavenHome + "/bin/mvn " + mavenArgLine.trim())
-                    .envs(envVars)
-                    .pwd(projectBasedir)
-                    .stdout(listener.getLogger())
-                    .stderr(listener.getLogger())
-                    .start();
-            exitCode = proc.join();
-        } catch (Exception e) {
-            throw new RuntimeException("Error while executing Maven process!", e);
-        }
-        if (exitCode != 0) {
-            throw new RuntimeException("Error while executing Maven process, non-zero exit code!");
-        }
-    }
+
 
     @Override
     public Descriptor getDescriptor() {
@@ -302,7 +274,7 @@ public class UpstreamReposBuilder extends Builder {
          * This human readable name is used in the configuration screen.
          */
         public String getDisplayName() {
-            return "Build dependent upstream repositories";
+            return "Build dependent upstream repositories (for PR builds)";
         }
 
         @Override
