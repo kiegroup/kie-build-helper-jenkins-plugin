@@ -35,10 +35,8 @@ public class KieGithubRepositoryBaseBranchTest {
                 {new KieGitHubRepository("errai", "errai"), "dashbuilder", "master", "master"},
                 {new KieGitHubRepository("errai", "errai"), "guvnor", "master", "master"},
                 {new KieGitHubRepository("uberfire", "uberfire"), "uberfire", "master", "master"},
-                {new KieGitHubRepository("uberfire", "uberfire"), "uberfire-extensions", "master", "master"},
                 {new KieGitHubRepository("uberfire", "uberfire"), "dashbuilder", "master", "master"},
                 {new KieGitHubRepository("uberfire", "uberfire"), "guvnor", "master", "master"},
-                {new KieGitHubRepository("uberfire", "uberfire-extensions"), "guvnor", "master", "master"},
                 {new KieGitHubRepository("dashbuilder", "dashbuilder"), "guvnor", "master", "master"},
                 {new KieGitHubRepository("droolsjbpm", "guvnor"), "jbpm-console-ng", "master", "master"},
                 // upstream repo builds, 0.8.x + 0.4.x + 6.4.x branches

@@ -24,7 +24,6 @@ public class KieRepositoryLists {
         List<KieGitHubRepository> repos = new ArrayList<KieGitHubRepository>() {{
             add(new KieGitHubRepository("errai", "errai"));
             add(new KieGitHubRepository("uberfire", "uberfire"));
-            add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
             add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
             add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-build-bootstrap"));
             add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-knowledge"));
