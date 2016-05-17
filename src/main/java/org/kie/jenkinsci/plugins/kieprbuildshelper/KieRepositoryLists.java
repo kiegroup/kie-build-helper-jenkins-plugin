@@ -44,7 +44,6 @@ public class KieRepositoryLists {
             add(new KieGitHubRepository("droolsjbpm", "jbpm-dashboard"));
             add(new KieGitHubRepository("droolsjbpm", "kie-docs"));
             add(new KieGitHubRepository("droolsjbpm", "kie-wb-distributions"));
-            add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-build-distribution"));
             add(new KieGitHubRepository("jboss-integration", "kie-eap-modules"));
         }};
         return new GitHubRepositoryList(repos);
