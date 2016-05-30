@@ -10,19 +10,12 @@ import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import net.sf.json.JSONObject;
-import org.jenkinsci.plugins.gitclient.Git;
-import org.jenkinsci.plugins.gitclient.GitClient;
-import org.kohsuke.github.GHIssueState;
-import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -49,6 +42,7 @@ import java.util.Map;
 public class UpstreamReposBuilder extends Builder {
 
     private PrintStream buildLogger;
+
     private String prLink;
     private String prSourceBranch;
     private String prTargetBranch;
@@ -109,13 +103,8 @@ public class UpstreamReposBuilder extends Builder {
             Map<KieGitHubRepository, String> upstreamRepos =
                     gatherUpstreamReposToBuild(prRepoName, prSourceBranch, prTargetBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);
             // clone upstream repositories
-            logUpstreamRepos(upstreamRepos);
-            for (Map.Entry<KieGitHubRepository, String> entry : upstreamRepos.entrySet()) {
-                KieGitHubRepository ghRepo = entry.getKey();
-                String branch = entry.getValue();
-                FilePath repoDir = new FilePath(upstreamReposDir, ghRepo.getName());
-                ghCloneAndCheckout(ghRepo, branch, repoDir, listener);
-            }
+            GitHubUtils.logRepositories(upstreamRepos, buildLogger);
+            GitHubUtils.cloneRepositories(upstreamReposDir, upstreamRepos, listener);
             // build upstream repositories using Maven
             String mavenHome = globalSettings.getMavenHome();
             String mavenArgLine = globalSettings.getUpstreamBuildsMavenArgLine();
@@ -138,18 +127,6 @@ public class UpstreamReposBuilder extends Builder {
         return true;
     }
 
-    private void logUpstreamRepos(Map<KieGitHubRepository, String> upstreamRepos) {
-        if (upstreamRepos.size() > 0) {
-            buildLogger.println("Upstream GitHub repositories that will be cloned and build:");
-            for (Map.Entry<KieGitHubRepository, String> entry : upstreamRepos.entrySet()) {
-                // print as '<URL>:<branch>'
-                buildLogger.println("\t" + entry.getKey().getReadOnlyCloneURL() + ":" + entry.getValue());
-            }
-        } else {
-            buildLogger.println("No required upstream GitHub repositories found.");
-        }
-    }
-
     /**
      * Gather list of upstream repositories that needs to be build before the base repository (repository with the PR).
      *
@@ -167,8 +144,8 @@ public class UpstreamReposBuilder extends Builder {
                 // we encountered the base repo, so all upstream repos were already processed and we can return the result
                 return upstreamRepos;
             }
-            if (checkBranchExists(prRepoOwner + "/" + kieRepoName, prSourceBranch, github) &&
-                    checkHasOpenPRAssociated(kieRepo.getOwner() + "/" + kieRepoName, prSourceBranch, prRepoOwner, github)) {
+            if (GitHubUtils.checkBranchExists(prRepoOwner + "/" + kieRepoName, prSourceBranch, github) &&
+                    GitHubUtils.checkHasOpenPRAssociated(kieRepo.getOwner() + "/" + kieRepoName, prSourceBranch, prRepoOwner, github)) {
                 upstreamRepos.put(new KieGitHubRepository(prRepoOwner, kieRepoName), prSourceBranch);
             } else {
                 // otherwise just use the current target branch for that repo (we will build the most up to date sources)
@@ -180,74 +157,6 @@ public class UpstreamReposBuilder extends Builder {
         }
         return upstreamRepos;
     }
-
-    /**
-     * Checks whether GitHub repository has specific branch.
-     * <p/>
-     * Used to check if the fork has the same branch as repo with PR.
-     *
-     * @param fullRepoName full GitHub repository name (owner + name)
-     * @param branch       branch to check
-     * @param github       GitHub API object used to talk to GitHub REST interface
-     * @return true if the branch exists, otherwise false
-     */
-    private boolean checkBranchExists(String fullRepoName, String branch, GitHub github) {
-        try {
-            return github.getRepository(fullRepoName).getBranches().containsKey(branch);
-        } catch (FileNotFoundException e) {
-            // thrown when the repository does not exist -> branch does not exist either
-            return false;
-        } catch (IOException e) {
-            throw new RuntimeException("Error while checking if branch '" + branch + "' exists in repo '" + fullRepoName + "'!", e);
-        }
-    }
-
-    /**
-     * Checks whether GitHub repository contains open PR with the same branch and owner. If so that means those two
-     * PRs are connected and need to be built together.
-     *
-     * @param fullRepoName full GitHub repository name (owner + name)
-     * @param prBranch     branch that was used to submit the PR
-     * @param prRepoOwner  owner of the repository that contain the PR branch
-     * @param github       GitHub API object used to talk to GitHub REST interface
-     * @return true if the specified repository contains open PR with the same branch and owner, otherwise false
-     */
-    private boolean checkHasOpenPRAssociated(String fullRepoName, String prBranch, String prRepoOwner, GitHub github) {
-        try {
-            List<GHPullRequest> prs = github.getRepository(fullRepoName).getPullRequests(GHIssueState.OPEN);
-            for (GHPullRequest pr : prs) {
-                // check if the PR source branch and name of the fork are the ones we are looking for
-                if (pr.getHead().getRef().equals(prBranch) &&
-                        pr.getHead().getRepository().getOwner().getLogin().equals(prRepoOwner)) {
-                    return true;
-                }
-            }
-            return false;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to get info about PRs for " + fullRepoName);
-        }
-    }
-
-    /**
-     * Clones GitHub repository into specified destination dir and checkouts the configured branch.
-     *
-     * @param ghRepo        GitHub repository to clone (contains both owner and repo name)
-     * @param branch        branch to checkout once the repository was cloned
-     * @param destDir       destination directory where to put the newly cloned repository
-     * @param buildListener Jenkins BuildListener used by the GitClient to print status info
-     * @throws IOException, InterruptedException
-     */
-    private void ghCloneAndCheckout(KieGitHubRepository ghRepo, String branch, FilePath destDir, BuildListener buildListener) throws IOException, InterruptedException {
-        destDir.mkdirs();
-        GitClient git = Git.with(buildListener, new EnvVars())
-                .in(destDir)
-                .using("git")
-                .getClient();
-        git.clone(ghRepo.getReadOnlyCloneURL(), "origin", true, null);
-        git.checkoutBranch(branch, "origin/" + branch);
-    }
-
-
 
     @Override
     public Descriptor getDescriptor() {

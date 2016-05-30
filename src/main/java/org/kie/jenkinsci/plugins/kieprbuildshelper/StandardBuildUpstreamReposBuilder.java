@@ -25,12 +25,9 @@ import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import net.sf.json.JSONObject;
-import org.jenkinsci.plugins.gitclient.Git;
-import org.jenkinsci.plugins.gitclient.GitClient;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -78,13 +75,8 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
             kieRepoList.filterOutUnnecessaryUpstreamRepos(baseRepository);
             Map<KieGitHubRepository, String> upstreamRepos = gatherUpstreamReposToBuild(baseRepository, branch, kieRepoList);
             // clone upstream repositories
-            logUpstreamRepos(upstreamRepos);
-            for (Map.Entry<KieGitHubRepository, String> entry : upstreamRepos.entrySet()) {
-                KieGitHubRepository ghRepo = entry.getKey();
-                String branch = entry.getValue();
-                FilePath repoDir = new FilePath(upstreamReposDir, ghRepo.getName());
-                ghCloneAndCheckout(ghRepo, branch, repoDir, listener);
-            }
+            GitHubUtils.logRepositories(upstreamRepos, buildLogger);
+            GitHubUtils.cloneRepositories(upstreamReposDir, upstreamRepos, listener);
             KiePRBuildsHelper.KiePRBuildsHelperDescriptor globalSettings = KiePRBuildsHelper.getKiePRBuildsHelperDescriptor();
             // build upstream repositories using Maven
             String mavenHome = globalSettings.getMavenHome();
@@ -106,18 +98,6 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
         return true;
     }
 
-    private void logUpstreamRepos(Map<KieGitHubRepository, String> upstreamRepos) {
-        if (upstreamRepos.size() > 0) {
-            buildLogger.println("Upstream GitHub repositories that will be cloned and build:");
-            for (Map.Entry<KieGitHubRepository, String> entry : upstreamRepos.entrySet()) {
-                // print as '<URL>:<branch>'
-                buildLogger.println("\t" + entry.getKey().getReadOnlyCloneURL() + ":" + entry.getValue());
-            }
-        } else {
-            buildLogger.println("No required upstream GitHub repositories found.");
-        }
-    }
-
     /**
      * Gather list of upstream repositories that needs to be build before the base repository.
      *
@@ -137,25 +117,6 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
             upstreamRepos.put(kieRepo, branch);
         }
         return upstreamRepos;
-    }
-
-    /**
-     * Clones GitHub repository into specified destination dir and checkouts the configured branch.
-     *
-     * @param ghRepo        GitHub repository to clone (contains both owner and repo name)
-     * @param branch        branch to checkout once the repository was cloned
-     * @param destDir       destination directory where to put the newly cloned repository
-     * @param buildListener Jenkins BuildListener used by the GitClient to print status info
-     * @throws IOException, InterruptedException
-     */
-    private void ghCloneAndCheckout(KieGitHubRepository ghRepo, String branch, FilePath destDir, BuildListener buildListener) throws IOException, InterruptedException {
-        destDir.mkdirs();
-        GitClient git = Git.with(buildListener, new EnvVars())
-                .in(destDir)
-                .using("git")
-                .getClient();
-        git.clone(ghRepo.getReadOnlyCloneURL(), "origin", true, null);
-        git.checkoutBranch(branch, "origin/" + branch);
     }
 
     @Override

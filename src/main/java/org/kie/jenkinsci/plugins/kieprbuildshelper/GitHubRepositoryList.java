@@ -60,7 +60,7 @@ public class GitHubRepositoryList {
         } else if (Arrays.asList("6.2.x", "0.5.x", "0.2.x").contains(branch)) {
             return KieRepositoryLists.getListFor62xBranch();
         } else {
-            throw new IllegalArgumentException("Invalid PR target branch '" + branch + "'!");
+            throw new IllegalArgumentException("Invalid target branch '" + branch + "'!");
         }
     }
 

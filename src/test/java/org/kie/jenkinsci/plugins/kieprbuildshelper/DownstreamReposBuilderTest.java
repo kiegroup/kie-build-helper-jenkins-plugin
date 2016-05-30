@@ -15,5 +15,55 @@
 
 package org.kie.jenkinsci.plugins.kieprbuildshelper;
 
+import hudson.EnvVars;
+import org.assertj.core.api.Assertions;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
 public class DownstreamReposBuilderTest {
+
+    private KiePRBuildsHelper.KiePRBuildsHelperDescriptor globalSettings;
+
+    @Before
+    public void setup() {
+        globalSettings = Mockito.mock(KiePRBuildsHelper.KiePRBuildsHelperDescriptor.class);
+        Mockito.when(globalSettings.getDownstreambuildsMavenArgLine()).thenReturn("clean install");
+    }
+
+    @Test
+    public void shouldInitializeFromEnvVarsWithoutPRInfo() {
+        EnvVars envVars = new EnvVars(
+                "baseRepo", "droolsjbpm/drools",
+                "sourceBranch", "myBranch",
+                "targetBranch", "master",
+                "downstreamBuildMavenArgLine", "-e -B clean verify"
+        );
+
+        DownstreamReposBuilder downstreamReposBuilder = new DownstreamReposBuilder(System.out, globalSettings);
+        downstreamReposBuilder.initFromEnvVars(envVars);
+        Assertions.assertThat(downstreamReposBuilder.getBaseRepoName()).isEqualTo("drools");
+        Assertions.assertThat(downstreamReposBuilder.getBaseRepoOwner()).isEqualTo("droolsjbpm");
+        Assertions.assertThat(downstreamReposBuilder.getSourceBranch()).isEqualTo("myBranch");
+        Assertions.assertThat(downstreamReposBuilder.getTargetBranch()).isEqualTo("master");
+        Assertions.assertThat(downstreamReposBuilder.getMavenArgLine()).isEqualTo("-e -B clean verify");
+    }
+
+    @Test
+    public void shouldInitializeFromEnvVarsWithPRInfo() {
+        EnvVars envVars = new EnvVars(
+                "ghprbGhRepository", "droolsjbpm/drools",
+                "ghprbSourceBranch", "myBranch",
+                "ghprbTargetBranch", "master"
+        );
+        DownstreamReposBuilder downstreamReposBuilder = new DownstreamReposBuilder(System.out, globalSettings);
+        downstreamReposBuilder.initFromEnvVars(envVars);
+        Assertions.assertThat(downstreamReposBuilder.getBaseRepoName()).isEqualTo("drools");
+        Assertions.assertThat(downstreamReposBuilder.getBaseRepoOwner()).isEqualTo("droolsjbpm");
+        Assertions.assertThat(downstreamReposBuilder.getSourceBranch()).isEqualTo("myBranch");
+        Assertions.assertThat(downstreamReposBuilder.getTargetBranch()).isEqualTo("master");
+        // per project arg line not specified, the global one should be used
+        Assertions.assertThat(downstreamReposBuilder.getMavenArgLine()).isEqualTo("clean install");
+    }
+
 }

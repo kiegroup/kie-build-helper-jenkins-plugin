@@ -39,7 +39,7 @@ public class KiePRBuildsHelper extends JobProperty<Job<?, ?>> {
     }
 
     @Extension
-    public static final class KiePRBuildsHelperDescriptor extends JobPropertyDescriptor {
+    public static class KiePRBuildsHelperDescriptor extends JobPropertyDescriptor {
 
         private String ghOAuthToken;
         private String mavenRepoCacheTgzUrl;
