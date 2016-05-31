@@ -29,7 +29,7 @@ needs to use correct fork and branch which contains additional changes in one or
 are matched by branch name (e.g. same branch name needs to be used for both PRs which are in different repositories).
 The relation between repositories is currently hard-coded in the plugin logic.
 
-=== Downstream repositories builder
+==== Downstream repositories builder
 Very similar to the above upstream repositories builder. Mainly used to verify that downstream repositories are not
 affected by the changes to the current repository. Downstream builds are thus, by default, executed with tests. It has
 the same features as upstream repositories builder - it can determine if the downstream repositories need different
