@@ -1,7 +1,8 @@
 :numbered:
 = kie-build-helper-jenkins-plugin
 
-Simple Jenkins plugin which helps with automation of KIE CI builds. Tightly coupled with KIE and our workflows.
+Simple Jenkins plugin which helps with automation of KIE CI builds. Tightly coupled with KIE and our workflows. Currently
+not easily reusable for other projects.
 
 == Why Jenkins plugin?
 Jenkins plugin was chosen after some experimentation with BASH/Groovy scripts. Scripts get messy very fast and it is also
@@ -28,6 +29,12 @@ needs to use correct fork and branch which contains additional changes in one or
 are matched by branch name (e.g. same branch name needs to be used for both PRs which are in different repositories).
 The relation between repositories is currently hard-coded in the plugin logic.
 
+=== Downstream repositories builder
+Very similar to the above upstream repositories builder. Mainly used to verify that downstream repositories are not
+affected by the changes to the current repository. Downstream builds are thus, by default, executed with tests. It has
+the same features as upstream repositories builder - it can determine if the downstream repositories need different
+base repository/branch based on the config and status of that branch (e.g. if there is a open PR associated with the branch).
+
 == Installing the plugin
 The plugin is not available in any public Jenkins repository, and likely will never be, as the plugin is very tightly coupled
 with our workflows and in the current form is not re-usable outside of KIE builds. When installing the plugin one needs to manually
@@ -46,5 +53,4 @@ In case you want to use one of the extension points specified above, just go to 
 
 == TODOs
   * use https://wiki.jenkins-ci.org/display/JENKINS/Credentials+Plugin[Credentials Plugin] to store/retrieve the GitHub API access token
-  * add support for downstream builds with full test execution
   * add extension (build step) for automated creation of new GitHub PRs
