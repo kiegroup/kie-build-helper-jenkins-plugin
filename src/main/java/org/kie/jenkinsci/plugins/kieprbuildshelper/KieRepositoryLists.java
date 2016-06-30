@@ -46,6 +46,37 @@ public class KieRepositoryLists {
         return new GitHubRepositoryList(repos);
     }
 
+    public static GitHubRepositoryList getListFor65xBranch() {
+        List<KieGitHubRepository> repos = new ArrayList<KieGitHubRepository>() {{
+            add(new KieGitHubRepository("errai", "errai"));
+            add(new KieGitHubRepository("uberfire", "uberfire"));
+            add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
+            add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
+            add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-build-bootstrap"));
+            add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-knowledge"));
+            add(new KieGitHubRepository("droolsjbpm", "drools"));
+            add(new KieGitHubRepository("droolsjbpm", "optaplanner"));
+            add(new KieGitHubRepository("droolsjbpm", "jbpm"));
+            add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-integration"));
+            add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-tools"));
+            add(new KieGitHubRepository("droolsjbpm", "kie-uberfire-extensions"));
+            add(new KieGitHubRepository("droolsjbpm", "guvnor"));
+            add(new KieGitHubRepository("droolsjbpm", "kie-wb-common"));
+            add(new KieGitHubRepository("droolsjbpm", "jbpm-form-modeler"));
+            add(new KieGitHubRepository("droolsjbpm", "drools-wb"));
+            add(new KieGitHubRepository("droolsjbpm", "jbpm-designer"));
+            add(new KieGitHubRepository("droolsjbpm", "jbpm-console-ng"));
+            add(new KieGitHubRepository("droolsjbpm", "dashboard-builder"));
+            add(new KieGitHubRepository("droolsjbpm", "optaplanner-wb"));
+            add(new KieGitHubRepository("droolsjbpm", "jbpm-dashboard"));
+            add(new KieGitHubRepository("droolsjbpm", "kie-docs"));
+            add(new KieGitHubRepository("droolsjbpm", "kie-wb-distributions"));
+            add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-build-distribution"));
+            add(new KieGitHubRepository("jboss-integration", "kie-eap-modules"));
+        }};
+        return new GitHubRepositoryList(repos);
+    }
+
     public static GitHubRepositoryList getListFor64xBranch() {
         List<KieGitHubRepository> repos = new ArrayList<KieGitHubRepository>() {{
             add(new KieGitHubRepository("errai", "errai"));
@@ -141,6 +172,7 @@ public class KieRepositoryLists {
         List<BranchMapping> mappings = new ArrayList<>();
         // branches for errai, uf, dashbuilder, kie
         mappings.add(new BranchMapping("master", "master", "master", "master"));
+        mappings.add(new BranchMapping("3.2", "0.9.x", "0.5.x", "6.5.x"));
         mappings.add(new BranchMapping("3.2", "0.8.x", "0.4.x", "6.4.x"));
         mappings.add(new BranchMapping("0.7.x", "0.3.x", "6.3.x"));
         mappings.add(new BranchMapping("0.5.x", "0.2.x", "6.2.x"));
