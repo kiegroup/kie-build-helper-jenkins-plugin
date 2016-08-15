@@ -26,9 +26,9 @@ public class GitHubRepositoryListTest {
     @Test
     public void shouldSuccessfullyLoadListForMaster() {
         GitHubRepositoryList repoList = GitHubRepositoryList.fromClasspathResource(GitHubRepositoryList.KIE_REPO_LIST_MASTER_RESOURCE_PATH);
-        Assert.assertEquals(24, repoList.size());
+        Assert.assertEquals(23, repoList.size());
         Assert.assertEquals(new KieGitHubRepository("uberfire", "uberfire"), repoList.getList().get(0));
-        Assert.assertEquals(new KieGitHubRepository("jboss-integration", "kie-eap-modules"), repoList.getList().get(23));
+        Assert.assertEquals(new KieGitHubRepository("jboss-integration", "kie-eap-modules"), repoList.getList().get(22));
     }
 
     @Test (expected = IllegalArgumentException.class)
