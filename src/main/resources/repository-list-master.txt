@@ -1,5 +1,4 @@
 uberfire/uberfire
-uberfire/uberfire-extensions
 dashbuilder/dashbuilder
 droolsjbpm/droolsjbpm-build-bootstrap
 droolsjbpm/droolsjbpm-knowledge
