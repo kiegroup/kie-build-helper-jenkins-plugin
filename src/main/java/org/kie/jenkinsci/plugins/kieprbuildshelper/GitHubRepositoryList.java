@@ -91,7 +91,7 @@ public class GitHubRepositoryList {
         }
         // nothing depends on stuff from -tools repo
         list.remove(new KieGitHubRepository("droolsjbpm", "droolsjbpm-tools"));
-        // no need to build docs, they are pretty much standalone
+        // no need to build docs as other repos do not depend on them
         list.remove(new KieGitHubRepository("droolsjbpm", "kie-docs"));
     }
 
