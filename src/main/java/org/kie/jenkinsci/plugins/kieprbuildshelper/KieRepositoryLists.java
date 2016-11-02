@@ -35,10 +35,10 @@ public class KieRepositoryLists {
             add(new KieGitHubRepository("droolsjbpm", "kie-uberfire-extensions"));
             add(new KieGitHubRepository("droolsjbpm", "guvnor"));
             add(new KieGitHubRepository("droolsjbpm", "kie-wb-common"));
-            add(new KieGitHubRepository("droolsjbpm", "jbpm-form-modeler"));
             add(new KieGitHubRepository("droolsjbpm", "drools-wb"));
             add(new KieGitHubRepository("droolsjbpm", "optaplanner-wb"));
             add(new KieGitHubRepository("droolsjbpm", "jbpm-designer"));
+            add(new KieGitHubRepository("droolsjbpm", "jbpm-form-modeler"));
             add(new KieGitHubRepository("droolsjbpm", "jbpm-console-ng"));
             add(new KieGitHubRepository("droolsjbpm", "kie-docs"));
             add(new KieGitHubRepository("droolsjbpm", "kie-wb-distributions"));
