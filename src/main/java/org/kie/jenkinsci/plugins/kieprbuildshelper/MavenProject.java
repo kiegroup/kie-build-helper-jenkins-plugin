@@ -44,6 +44,7 @@ public class MavenProject {
      *
      * @param mavenArgLine   Maven argument line with goals, profiles, etc
      * @param envVars        environmental variables passed to the Maven process
+     * @param buildLogger    build logger used to print info messages about the progress
      */
     public void build(String mavenArgLine, EnvVars envVars, PrintStream buildLogger) {
         int exitCode;

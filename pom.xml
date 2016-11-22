@@ -3,13 +3,17 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>1.642.1</version><!-- which version of Jenkins is this plugin built against? -->
+    <version>2.7</version><!-- which version of Jenkins is this plugin built against? -->
   </parent>
 
   <groupId>org.kie.jenkins-ci.plugins</groupId>
   <artifactId>kie-pr-builds-helper</artifactId>
   <version>0.1-SNAPSHOT</version>
   <packaging>hpi</packaging>
+
+  <properties>
+    <jenkins.version>2.7.4</jenkins.version>
+  </properties>
 
   <!-- get every artifact through repo.jenkins-ci.org, which proxies all the artifacts that we need -->
   <repositories>
@@ -76,6 +80,17 @@
           <source>1.7</source>
           <target>1.7</target>
         </configuration>
+      </plugin>
+      <!-- Disable the findbugs-plugin -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>findbugs</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

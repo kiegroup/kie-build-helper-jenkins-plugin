@@ -60,6 +60,7 @@ public class GitHubPRSummary {
      * Creates a PR summary from provided link, getting some of the info directly from Github.
      *
      * @param prLink pull request link, e.g. https://github.com/droolsjbpm/drools-wb/pull/77
+     * @param sourceBranch source branch of the PR
      * @param github configured Github instance used to talk to Github REST API
      *
      * @return summary info about GitHub PR

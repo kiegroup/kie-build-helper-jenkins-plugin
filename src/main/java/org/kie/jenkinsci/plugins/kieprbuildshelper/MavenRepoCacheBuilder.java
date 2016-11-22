@@ -33,7 +33,7 @@ import java.net.URL;
 
 /**
  * Custom {@link Builder} which downloads and unpacks Maven repo cache from specified URL.
- * <p/>
+ *
  * This is needed for multi-repo builds as we can't install the artifacts directly into default local
  * repo (~/.m2). Downloading everything again (starting with empty local repository) for every build would take too
  * much time, the repo cache is build once and it can be reused in all the PR jobs.

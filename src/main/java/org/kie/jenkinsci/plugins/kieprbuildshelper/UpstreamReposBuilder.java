@@ -20,20 +20,20 @@ import java.util.Map;
 
 /**
  * Custom {@link Builder} which allows building upstream repositories during automated PR builds.
- * <p/>
+ *
  * Building upstream repositories is usually needed when there are dependant PRs submitted into
  * different repositories.
- * <p/>
+ *
  * When the user configures the project and enables this builder,
  * {@link Descriptor#newInstance(StaplerRequest)} is invoked
  * and a new {@link KiePRBuildsHelper} is created. The created
  * instance is persisted to the project configuration XML by using
  * XStream, so this allows you to use instance fields
  * to remember the configuration.
- * <p/>
+ *
  * When a build is performed, the {@link #perform(AbstractBuild, Launcher, BuildListener)}
  * method will be invoked.
- * <p/>
+ *
  * What the builder does:
  * - collects info about the current PR and repository
  * - clones all needed upstream repos

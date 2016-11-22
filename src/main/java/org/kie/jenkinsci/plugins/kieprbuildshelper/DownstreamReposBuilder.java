@@ -20,21 +20,21 @@ import java.util.Map;
 
 /**
  * Custom {@link Builder} which allows building downstream repositories during automated Jenkins builds.
- * <p/>
+ *
  * Building downstream repositories is usually needed when there are dependant PRs submitted into
  * different repositories. That way we can make sure all downstream repositories are still green, even after
  * applying the change in the repository under test.
- * <p/>
+ *
  * When the user configures the project and enables this builder,
  * {@link Descriptor#newInstance(StaplerRequest)} is invoked
  * and a new {@link KiePRBuildsHelper} is created. The created
  * instance is persisted to the project configuration XML by using
  * XStream, so this allows you to use instance fields
  * to remember the configuration.
- * <p/>
+ *
  * When a build is performed, the {@link #perform(AbstractBuild, Launcher, BuildListener)}
  * method will be invoked.
- * <p/>
+ *
  * What the builder does:
  * - collects info about the current repository and branch to test
  * - clones all needed downstream repositories
@@ -93,6 +93,8 @@ public class DownstreamReposBuilder extends Builder {
 
     /**
      * Initializes the fields from passed Environmental Variables
+     *
+     * @param envVars set of environment variables
      */
     public void initFromEnvVars(EnvVars envVars) {
         sourceBranch = envVars.get("sourceBranch");

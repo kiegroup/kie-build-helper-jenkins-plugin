@@ -34,7 +34,7 @@ public class GitHubUtils {
 
     /**
      * Checks whether GitHub repository has specific branch.
-     * <p/>
+     *
      * Used to check if the fork has the same branch as repo with PR.
      *
      * @param fullRepoName full GitHub repository name (owner + name)
@@ -86,7 +86,6 @@ public class GitHubUtils {
      * @param branch        branch to checkout once the repository was cloned
      * @param destDir       destination directory where to put the newly cloned repository
      * @param buildListener Jenkins BuildListener used by the GitClient to print status info
-     * @throws IOException, InterruptedException
      */
     public static void cloneAndCheckout(KieGitHubRepository ghRepo, String branch, FilePath destDir,
                                         BuildListener buildListener) throws IOException, InterruptedException {
