@@ -32,21 +32,20 @@ public class DownstreamReposBuilderTest {
     }
 
     @Test
-    public void shouldInitializeFromEnvVarsWithoutPRInfo() {
+    public void shouldInitializeFromEnvVarsAndJobConfigWithoutPRInfo() {
         EnvVars envVars = new EnvVars(
                 "baseRepo", "droolsjbpm/drools",
                 "sourceBranch", "myBranch",
-                "targetBranch", "master",
-                "downstreamBuildMavenArgLine", "-e -B clean verify"
+                "targetBranch", "master"
         );
 
-        DownstreamReposBuilder downstreamReposBuilder = new DownstreamReposBuilder(System.out, globalSettings);
+        DownstreamReposBuilder downstreamReposBuilder = new DownstreamReposBuilder("-e -B clean verify", System.out, globalSettings);
         downstreamReposBuilder.initFromEnvVars(envVars);
         Assertions.assertThat(downstreamReposBuilder.getBaseRepoName()).isEqualTo("drools");
         Assertions.assertThat(downstreamReposBuilder.getBaseRepoOwner()).isEqualTo("droolsjbpm");
         Assertions.assertThat(downstreamReposBuilder.getSourceBranch()).isEqualTo("myBranch");
         Assertions.assertThat(downstreamReposBuilder.getTargetBranch()).isEqualTo("master");
-        Assertions.assertThat(downstreamReposBuilder.getMavenArgLine()).isEqualTo("-e -B clean verify");
+        Assertions.assertThat(downstreamReposBuilder.getMvnArgLine()).isEqualTo("-e -B clean verify");
     }
 
     @Test
@@ -56,14 +55,14 @@ public class DownstreamReposBuilderTest {
                 "ghprbSourceBranch", "myBranch",
                 "ghprbTargetBranch", "master"
         );
-        DownstreamReposBuilder downstreamReposBuilder = new DownstreamReposBuilder(System.out, globalSettings);
+        DownstreamReposBuilder downstreamReposBuilder = new DownstreamReposBuilder("", System.out, globalSettings);
         downstreamReposBuilder.initFromEnvVars(envVars);
         Assertions.assertThat(downstreamReposBuilder.getBaseRepoName()).isEqualTo("drools");
         Assertions.assertThat(downstreamReposBuilder.getBaseRepoOwner()).isEqualTo("droolsjbpm");
         Assertions.assertThat(downstreamReposBuilder.getSourceBranch()).isEqualTo("myBranch");
         Assertions.assertThat(downstreamReposBuilder.getTargetBranch()).isEqualTo("master");
         // per project arg line not specified, the global one should be used
-        Assertions.assertThat(downstreamReposBuilder.getMavenArgLine()).isEqualTo("clean install");
+        Assertions.assertThat(downstreamReposBuilder.getMvnArgLine()).isEqualTo("clean install");
     }
 
 }

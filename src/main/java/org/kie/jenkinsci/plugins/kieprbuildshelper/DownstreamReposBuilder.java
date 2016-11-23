@@ -51,7 +51,14 @@ public class DownstreamReposBuilder extends Builder {
     private String sourceBranch;
     private String targetBranch;
 
-    private String mavenArgLine;
+    /**
+     *  Maven argument line can be configured at two different levels:
+     *   1) per job, directly as part of the build step
+     *   2) globally for all jobs (Manage Jenkins -> Configure System)
+     *
+     *  Per-job configuration has precedence over the global one.
+     */
+    private String mvnArgLine;
 
     /**
      * Flag that indicates whether the surrounding build is a Pull Request (PR) build or not.
@@ -62,11 +69,13 @@ public class DownstreamReposBuilder extends Builder {
     private boolean isPRBuild;
 
     @DataBoundConstructor
-    public DownstreamReposBuilder() {
+    public DownstreamReposBuilder(String mvnArgLine) {
+        this.mvnArgLine = mvnArgLine;
         this.globalSettings = KiePRBuildsHelper.getKiePRBuildsHelperDescriptor();
     }
 
-    public DownstreamReposBuilder(PrintStream buildLogger, KiePRBuildsHelper.KiePRBuildsHelperDescriptor globalSettings) {
+    public DownstreamReposBuilder(String mvnArgLine, PrintStream buildLogger, KiePRBuildsHelper.KiePRBuildsHelperDescriptor globalSettings) {
+        this.mvnArgLine = mvnArgLine;
         this.buildLogger = buildLogger;
         this.globalSettings = globalSettings;
     }
@@ -87,8 +96,8 @@ public class DownstreamReposBuilder extends Builder {
         return targetBranch;
     }
 
-    public String getMavenArgLine() {
-        return mavenArgLine;
+    public String getMvnArgLine() {
+        return mvnArgLine;
     }
 
     /**
@@ -109,9 +118,10 @@ public class DownstreamReposBuilder extends Builder {
         if (isEmpty(baseGhRepo)) {
             baseGhRepo = envVars.get("ghprbGhRepository");
         }
-        mavenArgLine = envVars.get("downstreamBuildMavenArgLine");
-        if (isEmpty(mavenArgLine)) {
-            mavenArgLine = globalSettings.getDownstreambuildsMavenArgLine();
+
+        if (isEmpty(mvnArgLine)) {
+            mvnArgLine = globalSettings.getDownstreambuildsMavenArgLine();
+            buildLogger.println("Using globally configured Maven arg. line: " + mvnArgLine);
         }
 
         isPRBuild = !isEmpty(envVars.get("ghprbPullLink"));
@@ -128,10 +138,10 @@ public class DownstreamReposBuilder extends Builder {
             throw new IllegalStateException("Target branch not set! Make sure variable 'targetBranch' contains valid " +
                     "target branch for the configured GitHub repository!");
         }
-        if (isEmpty(mavenArgLine)) {
-            throw new IllegalStateException("Maven arg line for downstream build not set! Make sure variable 'downstreamBuildMavenArgLine' " +
+        if (isEmpty(mvnArgLine)) {
+            throw new IllegalStateException("Maven arg. line for downstream build not configured! Make sure to update " +
                     "contains valid Maven argument line (e.g. '-e -B clean install'). You can also set the arg line" +
-                    "globally, on Jenkins configuration page.");
+                    "the job configuration or global settings (on Jenkins configuration page).");
         }
         String[] parts = baseGhRepo.split("/");
         baseRepoOwner = parts[0];
@@ -173,14 +183,11 @@ public class DownstreamReposBuilder extends Builder {
             String mavenHome = globalSettings.getMavenHome();
 
             String mavenOpts = globalSettings.getMavenOpts();
-            if (!mavenArgLine.contains("-Dmaven.repo.local=")) {
-                mavenArgLine = mavenArgLine + " -Dmaven.repo.local=" + new FilePath(workspace, ".repository").getRemote();
-            }
             for (Map.Entry<KieGitHubRepository, String> entry : downstreamRepos.entrySet()) {
                 KieGitHubRepository ghRepo = entry.getKey();
                 MavenProject mavenProject = new MavenProject(new FilePath(downstreamReposDir,
                         ghRepo.getName()), mavenHome, mavenOpts, launcher, listener);
-                mavenProject.build(mavenArgLine, envVars, buildLogger);
+                mavenProject.build(mvnArgLine, envVars, buildLogger);
             }
         } catch (Exception ex) {
             buildLogger.println("Unexpected error while executing the DownstreamReposBuilder! " + ex.getMessage());

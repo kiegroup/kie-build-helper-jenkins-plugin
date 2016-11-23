@@ -21,8 +21,8 @@ import java.util.Map;
 /**
  * Custom {@link Builder} which allows building upstream repositories during automated PR builds.
  *
- * Building upstream repositories is usually needed when there are dependant PRs submitted into
- * different repositories.
+ * Building upstream repositories is needed to get the most up-to-date upstream artifacts. Relying on SNAPSHOTs in remote
+ * repositories is error prone.
  *
  * When the user configures the project and enables this builder,
  * {@link Descriptor#newInstance(StaplerRequest)} is invoked
@@ -41,11 +41,11 @@ import java.util.Map;
  */
 public class UpstreamReposBuilder extends Builder {
 
-    private PrintStream buildLogger;
+    private transient PrintStream buildLogger;
 
-    private String prLink;
-    private String prSourceBranch;
-    private String prTargetBranch;
+    private transient String prLink;
+    private transient String prSourceBranch;
+    private transient String prTargetBranch;
 
     @DataBoundConstructor
     public UpstreamReposBuilder() {
@@ -109,9 +109,6 @@ public class UpstreamReposBuilder extends Builder {
             String mavenHome = globalSettings.getMavenHome();
             String mavenArgLine = globalSettings.getUpstreamBuildsMavenArgLine();
             String mavenOpts = globalSettings.getMavenOpts();
-            if (!mavenArgLine.contains("-Dmaven.repo.local=")) {
-                mavenArgLine = mavenArgLine + " -Dmaven.repo.local=" + new FilePath(workspace, ".repository").getRemote();
-            }
             for (Map.Entry<KieGitHubRepository, String> entry : upstreamRepos.entrySet()) {
                 KieGitHubRepository ghRepo = entry.getKey();
                 MavenProject mavenProject = new MavenProject(new FilePath(upstreamReposDir,
@@ -183,7 +180,7 @@ public class UpstreamReposBuilder extends Builder {
          * This human readable name is used in the configuration screen.
          */
         public String getDisplayName() {
-            return "Build dependent upstream repositories (for PR builds)";
+            return "Build required upstream repositories (for PR builds)";
         }
 
         @Override

@@ -41,7 +41,7 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
     private final String baseRepository;
     private final String branch;
 
-    private PrintStream buildLogger;
+    private transient PrintStream buildLogger;
 
     @DataBoundConstructor
     public StandardBuildUpstreamReposBuilder(String baseRepository, String branch) {
@@ -144,7 +144,7 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
          * This human readable name is used in the configuration screen.
          */
         public String getDisplayName() {
-            return "Build dependent upstream repositories (for standard builds)";
+            return "Build required upstream repositories (for standard builds)";
         }
 
         @Override
