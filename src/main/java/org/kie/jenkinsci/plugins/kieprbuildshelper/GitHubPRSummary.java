@@ -22,6 +22,7 @@ import java.io.IOException;
 
 public class GitHubPRSummary {
 
+    // TODO save as GitHubRepository 'targetRepo' (contains owner + name)
     private final String targetRepo;
     private final String targetRepoOwner;
     private final int id;
@@ -60,12 +61,11 @@ public class GitHubPRSummary {
      * Creates a PR summary from provided link, getting some of the info directly from Github.
      *
      * @param prLink pull request link, e.g. https://github.com/droolsjbpm/drools-wb/pull/77
-     * @param sourceBranch source branch of the PR
      * @param github configured Github instance used to talk to Github REST API
      *
      * @return summary info about GitHub PR
      */
-    public static GitHubPRSummary fromPRLink(String prLink, String sourceBranch, GitHub github) {
+    public static GitHubPRSummary fromPRLink(String prLink, GitHub github) {
         String str = preProcessPRLink(prLink);
         String[] parts = str.split("/");
         String targetRepoOwner = parts[0];
@@ -76,6 +76,7 @@ public class GitHubPRSummary {
         try {
             pr = github.getRepository(targetRepoOwner + "/" + targetRepo).getPullRequest(id);
             String sourceRepoOwner = pr.getHead().getRepository().getOwner().getLogin();
+            String sourceBranch = pr.getHead().getRef();
             return new GitHubPRSummary(
                     targetRepo,
                     targetRepoOwner,
@@ -107,6 +108,42 @@ public class GitHubPRSummary {
         } else {
             return noGhComPrInfo;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "GitHubPRSummary{" +
+                "targetRepo='" + targetRepo + '\'' +
+                ", targetRepoOwner='" + targetRepoOwner + '\'' +
+                ", id=" + id +
+                ", sourceBranch='" + sourceBranch + '\'' +
+                ", sourceRepoOwner='" + sourceRepoOwner + '\'' +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GitHubPRSummary that = (GitHubPRSummary) o;
+
+        if (id != that.id) return false;
+        if (targetRepo != null ? !targetRepo.equals(that.targetRepo) : that.targetRepo != null) return false;
+        if (targetRepoOwner != null ? !targetRepoOwner.equals(that.targetRepoOwner) : that.targetRepoOwner != null)
+            return false;
+        if (sourceBranch != null ? !sourceBranch.equals(that.sourceBranch) : that.sourceBranch != null) return false;
+        return sourceRepoOwner != null ? sourceRepoOwner.equals(that.sourceRepoOwner) : that.sourceRepoOwner == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = targetRepo != null ? targetRepo.hashCode() : 0;
+        result = 31 * result + (targetRepoOwner != null ? targetRepoOwner.hashCode() : 0);
+        result = 31 * result + id;
+        result = 31 * result + (sourceBranch != null ? sourceBranch.hashCode() : 0);
+        result = 31 * result + (sourceRepoOwner != null ? sourceRepoOwner.hashCode() : 0);
+        return result;
     }
 
 }

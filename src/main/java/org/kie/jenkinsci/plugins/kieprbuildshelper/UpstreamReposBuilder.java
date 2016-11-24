@@ -53,6 +53,8 @@ public class UpstreamReposBuilder extends Builder {
 
     /**
      * Initializes the fields from passed Environmental Variables
+     *
+     * @param envVars set of environment variables
      */
     public void initFromEnvVars(EnvVars envVars) {
         prLink = envVars.get("ghprbPullLink");
@@ -83,8 +85,8 @@ public class UpstreamReposBuilder extends Builder {
 
             GitHubRepositoryList kieRepoList = GitHubRepositoryList.forBranch(prTargetBranch);
             KiePRBuildsHelper.KiePRBuildsHelperDescriptor globalSettings = KiePRBuildsHelper.getKiePRBuildsHelperDescriptor();
-            String ghOAuthToken = globalSettings.getGhOAuthToken();
 
+            String ghOAuthToken = globalSettings.getGhOAuthToken();
             if (ghOAuthToken == null) {
                 buildLogger.println("No GitHub OAuth token found. Please set one on global Jenkins configuration page.");
                 return false;
@@ -96,7 +98,7 @@ public class UpstreamReposBuilder extends Builder {
 
             GitHub github = GitHub.connectUsingOAuth(ghOAuthToken);
             // get info about the PR from variables provided by GitHub Pull Request Builder plugin
-            GitHubPRSummary prSummary = GitHubPRSummary.fromPRLink(prLink, prSourceBranch, github);
+            GitHubPRSummary prSummary = GitHubPRSummary.fromPRLink(prLink, github);
 
             String prRepoName = prSummary.getTargetRepo();
             kieRepoList.filterOutUnnecessaryUpstreamRepos(prRepoName);

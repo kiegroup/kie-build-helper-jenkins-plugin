@@ -38,8 +38,8 @@ import java.util.Map;
  */
 public class StandardBuildUpstreamReposBuilder extends Builder {
 
-    private final String baseRepository;
-    private final String branch;
+    private transient final String baseRepository;
+    private transient final String branch;
 
     private transient PrintStream buildLogger;
 

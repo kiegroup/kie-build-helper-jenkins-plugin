@@ -19,7 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Custom {@link Builder} which allows building downstream repositories during automated Jenkins builds.
+ * Custom {@link Builder} which allows building downstream repositories during automated Jenkins PR builds.
  *
  * Building downstream repositories is usually needed when there are dependant PRs submitted into
  * different repositories. That way we can make sure all downstream repositories are still green, even after
@@ -42,14 +42,11 @@ import java.util.Map;
  */
 public class DownstreamReposBuilder extends Builder {
 
-    private final KiePRBuildsHelper.KiePRBuildsHelperDescriptor globalSettings;
+    private transient PrintStream buildLogger;
 
-    private PrintStream buildLogger;
-
-    private String baseRepoName;
-    private String baseRepoOwner;
-    private String sourceBranch;
-    private String targetBranch;
+    private transient String prLink;
+    private transient String prSourceBranch;
+    private transient String prTargetBranch;
 
     /**
      *  Maven argument line can be configured at two different levels:
@@ -60,40 +57,9 @@ public class DownstreamReposBuilder extends Builder {
      */
     private String mvnArgLine;
 
-    /**
-     * Flag that indicates whether the surrounding build is a Pull Request (PR) build or not.
-     * PR build slightly changes the behavior when looking for repositories and branches. The repo+branch
-     * also needs to have open PR associated with to be considered. If the build is not for PR, it is enough
-     * if the branch just exists (no need to have open PR associated with it).
-     **/
-    private boolean isPRBuild;
-
     @DataBoundConstructor
     public DownstreamReposBuilder(String mvnArgLine) {
         this.mvnArgLine = mvnArgLine;
-        this.globalSettings = KiePRBuildsHelper.getKiePRBuildsHelperDescriptor();
-    }
-
-    public DownstreamReposBuilder(String mvnArgLine, PrintStream buildLogger, KiePRBuildsHelper.KiePRBuildsHelperDescriptor globalSettings) {
-        this.mvnArgLine = mvnArgLine;
-        this.buildLogger = buildLogger;
-        this.globalSettings = globalSettings;
-    }
-
-    public String getBaseRepoName() {
-        return baseRepoName;
-    }
-
-    public String getBaseRepoOwner() {
-        return baseRepoOwner;
-    }
-
-    public String getSourceBranch() {
-        return sourceBranch;
-    }
-
-    public String getTargetBranch() {
-        return targetBranch;
     }
 
     public String getMvnArgLine() {
@@ -106,62 +72,35 @@ public class DownstreamReposBuilder extends Builder {
      * @param envVars set of environment variables
      */
     public void initFromEnvVars(EnvVars envVars) {
-        sourceBranch = envVars.get("sourceBranch");
-        if (isEmpty(sourceBranch)) {
-            sourceBranch = envVars.get("ghprbSourceBranch");
+        prLink = envVars.get("ghprbPullLink");
+        prSourceBranch = envVars.get("ghprbSourceBranch");
+        prTargetBranch = envVars.get("ghprbTargetBranch");
+        buildLogger.println("Working with PR: " + prLink);
+        buildLogger.println("PR source branch: " + prSourceBranch);
+        buildLogger.println("PR target branch: " + prTargetBranch);
+        if (prLink == null || "".equals(prLink)) {
+            throw new IllegalStateException("PR link not set! Make sure variable 'ghprbPullLink' contains valid link to GitHub Pull Request!");
         }
-        targetBranch = envVars.get("targetBranch");
-        if (isEmpty(targetBranch)) {
-            targetBranch = envVars.get("ghprbTargetBranch");
+        if (prSourceBranch == null || "".equals(prSourceBranch)) {
+            throw new IllegalStateException("PR source branch not set! Make sure variable 'ghprbSourceBranch' contains valid source branch for the configured GitHub Pull Request!");
         }
-        String baseGhRepo = envVars.get("baseRepo");
-        if (isEmpty(baseGhRepo)) {
-            baseGhRepo = envVars.get("ghprbGhRepository");
+        if (prTargetBranch == null || "".equals(prTargetBranch)) {
+            throw new IllegalStateException("PR target branch not set! Make sure variable 'ghprbTargetBranch' contains valid target branch for the configured GitHub Pull Request!");
         }
-
-        if (isEmpty(mvnArgLine)) {
-            mvnArgLine = globalSettings.getDownstreambuildsMavenArgLine();
-            buildLogger.println("Using globally configured Maven arg. line: " + mvnArgLine);
-        }
-
-        isPRBuild = !isEmpty(envVars.get("ghprbPullLink"));
-
-        if (isEmpty(baseGhRepo)) {
-            throw new IllegalStateException("Base repository not set! Make sure variable 'baseRepo' contains valid " +
-                    "repository owner and repo name (in format <owner>/<repo-name>!");
-        }
-        if (isEmpty(sourceBranch)) {
-            throw new IllegalStateException("Source branch not set! Make sure variable 'sourceBranch' contains valid " +
-                    "source branch for the configured GitHub Repository!");
-        }
-        if (isEmpty(targetBranch)) {
-            throw new IllegalStateException("Target branch not set! Make sure variable 'targetBranch' contains valid " +
-                    "target branch for the configured GitHub repository!");
-        }
-        if (isEmpty(mvnArgLine)) {
-            throw new IllegalStateException("Maven arg. line for downstream build not configured! Make sure to update " +
-                    "contains valid Maven argument line (e.g. '-e -B clean install'). You can also set the arg line" +
-                    "the job configuration or global settings (on Jenkins configuration page).");
-        }
-        String[] parts = baseGhRepo.split("/");
-        baseRepoOwner = parts[0];
-        baseRepoName = parts[1];
-
-        buildLogger.println("Working with repository: https://github.com/" + baseRepoOwner + "/" + baseRepoName);
-        buildLogger.println("Source branch: " + sourceBranch);
-        buildLogger.println("Target branch: " + targetBranch);
     }
 
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) {
         try {
             buildLogger = listener.getLogger();
-            buildLogger.println("Downstream repositories builder started.");
+            buildLogger.println("Downstream repositories builder for PR builds started.");
             EnvVars envVars = build.getEnvironment(launcher.getListener());
             initFromEnvVars(envVars);
             FilePath workspace = build.getWorkspace();
 
-            GitHubRepositoryList kieRepoList = GitHubRepositoryList.forBranch(targetBranch);
+            GitHubRepositoryList kieRepoList = GitHubRepositoryList.forBranch(prTargetBranch);
+
+            KiePRBuildsHelper.KiePRBuildsHelperDescriptor globalSettings = KiePRBuildsHelper.getKiePRBuildsHelperDescriptor();
 
             String ghOAuthToken = globalSettings.getGhOAuthToken();
             if (isEmpty(ghOAuthToken)) {
@@ -174,9 +113,15 @@ public class DownstreamReposBuilder extends Builder {
             downstreamReposDir.deleteRecursive();
 
             GitHub github = GitHub.connectUsingOAuth(ghOAuthToken);
+            // get info about the PR from variables provided by GitHub Pull Request Builder plugin
+            GitHubPRSummary prSummary = GitHubPRSummary.fromPRLink(prLink, github);
+            buildLogger.println(prSummary);
+
+            String prRepoName = prSummary.getTargetRepo();
+            kieRepoList.filterOutUnnecessaryUpstreamRepos(prRepoName);
 
             Map<KieGitHubRepository, String> downstreamRepos =
-                    gatherDownstreamReposToBuild(baseRepoName, sourceBranch, targetBranch, baseRepoOwner, kieRepoList, github);
+                    gatherDownstreamReposToBuild(prRepoName, prSummary.getSourceBranch(), prTargetBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);
             GitHubUtils.logRepositories(downstreamRepos, buildLogger);
             GitHubUtils.cloneRepositories(downstreamReposDir, downstreamRepos, listener);
             // build downstream repositories using Maven
@@ -205,10 +150,10 @@ public class DownstreamReposBuilder extends Builder {
     /**
      * Gather list of downstream repositories that needs to be build before the base repository (repository with the PR).
      *
-     * @param baseRepoName     GitHub repository name that the PR was submitted against
-     * @param sourceBranch source branch of the PR
-     * @param baseRepoOwner    owner of the repository with the source PR branch
-     * @param github         GitHub API object used to talk to GitHub REST interface
+     * @param baseRepoName  GitHub repository name that the PR was submitted against
+     * @param sourceBranch  source branch of the PR
+     * @param baseRepoOwner owner of the repository with the source PR branch
+     * @param github        GitHub API client used to talk to the GitHub REST interface
      * @return Map of downstream repositories (with specific branches) that need to be build before the base repository
      */
     private Map<KieGitHubRepository, String> gatherDownstreamReposToBuild(String baseRepoName, String sourceBranch,
@@ -228,9 +173,7 @@ public class DownstreamReposBuilder extends Builder {
 
             boolean branchExists = GitHubUtils.checkBranchExists(baseRepoOwner + "/" + kieRepoName, sourceBranch, github);
             boolean hasOpenPRAssociated = GitHubUtils.checkHasOpenPRAssociated(kieRepo.getOwner() + "/" + kieRepoName, sourceBranch, baseRepoOwner, github);
-            if (isPRBuild && branchExists && hasOpenPRAssociated) {
-                downstreamRepos.put(new KieGitHubRepository(baseRepoOwner, kieRepoName), sourceBranch);
-            } else if (!isPRBuild && branchExists) {
+            if (branchExists && hasOpenPRAssociated) {
                 downstreamRepos.put(new KieGitHubRepository(baseRepoOwner, kieRepoName), sourceBranch);
             } else {
                 // otherwise just use the current target branch for that repo (we will build the most up to date sources)
@@ -244,8 +187,8 @@ public class DownstreamReposBuilder extends Builder {
     }
 
     @Override
-    public Descriptor getDescriptor() {
-        return (Descriptor) super.getDescriptor();
+    public DownstreamReposBuilder.Descriptor getDescriptor() {
+        return (DownstreamReposBuilder.Descriptor) super.getDescriptor();
     }
 
     /**
@@ -268,7 +211,7 @@ public class DownstreamReposBuilder extends Builder {
          * This human readable name is used in the configuration screen.
          */
         public String getDisplayName() {
-            return "Build dependent downstream repositories";
+            return "Build dependent downstream repositories (for PR builds)";
         }
 
         @Override
