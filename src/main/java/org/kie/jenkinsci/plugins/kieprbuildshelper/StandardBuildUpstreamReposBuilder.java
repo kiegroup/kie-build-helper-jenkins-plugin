@@ -25,6 +25,7 @@ import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import net.sf.json.JSONObject;
+import org.eclipse.jgit.transport.RefSpec;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -73,7 +74,7 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
             upstreamReposDir.deleteRecursive();
 
             kieRepoList.filterOutUnnecessaryUpstreamRepos(baseRepository);
-            Map<KieGitHubRepository, String> upstreamRepos = gatherUpstreamReposToBuild(baseRepository, branch, kieRepoList);
+            Map<KieGitHubRepository, RefSpec> upstreamRepos = gatherUpstreamReposToBuild(baseRepository, branch, kieRepoList);
             // clone upstream repositories
             GitHubUtils.logRepositories(upstreamRepos, buildLogger);
             GitHubUtils.cloneRepositories(upstreamReposDir, upstreamRepos, listener);
@@ -82,8 +83,7 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
             String mavenHome = globalSettings.getMavenHome();
             String mavenArgLine = globalSettings.getUpstreamBuildsMavenArgLine();
             String mavenOpts = globalSettings.getMavenOpts();
-            for (Map.Entry<KieGitHubRepository, String> entry : upstreamRepos.entrySet()) {
-                KieGitHubRepository ghRepo = entry.getKey();
+            for (KieGitHubRepository ghRepo : upstreamRepos.keySet()) {
                 MavenProject mavenProject = new MavenProject(new FilePath(upstreamReposDir,
                         ghRepo.getName()), mavenHome, mavenOpts, launcher, listener);
                 mavenProject.build(mavenArgLine, envVars, buildLogger);
@@ -103,10 +103,10 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
      *
      * @param baseRepoName   GitHub repository name
      * @param baseRepoBranch branch name
-     * @return Map of upstream repositories (with specific branches) that need to be build before the base repository
+     * @return Map of upstream repositories with refspecs that need to be build before the base repository
      */
-    private Map<KieGitHubRepository, String> gatherUpstreamReposToBuild(String baseRepoName, String baseRepoBranch, GitHubRepositoryList kieRepoList) {
-        Map<KieGitHubRepository, String> upstreamRepos = new LinkedHashMap<>();
+    private Map<KieGitHubRepository, RefSpec> gatherUpstreamReposToBuild(String baseRepoName, String baseRepoBranch, GitHubRepositoryList kieRepoList) {
+        Map<KieGitHubRepository, RefSpec> upstreamRepos = new LinkedHashMap<>();
         for (KieGitHubRepository kieRepo : kieRepoList.getList()) {
             String kieRepoName = kieRepo.getName();
             if (kieRepoName.equals(baseRepoName)) {
@@ -114,7 +114,7 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
                 return upstreamRepos;
             }
             String branch = KieRepositoryLists.getBaseBranchFor(kieRepoName, baseRepoBranch, baseRepoBranch);
-            upstreamRepos.put(kieRepo, branch);
+            upstreamRepos.put(kieRepo, new RefSpec(branch + ":" + branch + "-build"));
         }
         return upstreamRepos;
     }

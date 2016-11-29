@@ -10,6 +10,9 @@ import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import net.sf.json.JSONObject;
+import org.eclipse.jgit.transport.RefSpec;
+import org.kohsuke.github.GHIssue;
+import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
@@ -17,6 +20,8 @@ import org.kohsuke.stapler.StaplerRequest;
 import java.io.PrintStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Custom {@link Builder} which allows building upstream repositories during automated PR builds.
@@ -43,10 +48,10 @@ public class UpstreamReposBuilder extends Builder {
 
     private transient PrintStream buildLogger;
 
+
     private transient String prLink;
     private transient String prSourceBranch;
     private transient String prTargetBranch;
-
     @DataBoundConstructor
     public UpstreamReposBuilder() {
     }
@@ -102,7 +107,7 @@ public class UpstreamReposBuilder extends Builder {
 
             String prRepoName = prSummary.getTargetRepo();
             kieRepoList.filterOutUnnecessaryUpstreamRepos(prRepoName);
-            Map<KieGitHubRepository, String> upstreamRepos =
+            Map<KieGitHubRepository, RefSpec> upstreamRepos =
                     gatherUpstreamReposToBuild(prRepoName, prSourceBranch, prTargetBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);
             // clone upstream repositories
             GitHubUtils.logRepositories(upstreamRepos, buildLogger);
@@ -111,8 +116,7 @@ public class UpstreamReposBuilder extends Builder {
             String mavenHome = globalSettings.getMavenHome();
             String mavenArgLine = globalSettings.getUpstreamBuildsMavenArgLine();
             String mavenOpts = globalSettings.getMavenOpts();
-            for (Map.Entry<KieGitHubRepository, String> entry : upstreamRepos.entrySet()) {
-                KieGitHubRepository ghRepo = entry.getKey();
+            for (KieGitHubRepository ghRepo : upstreamRepos.keySet()) {
                 MavenProject mavenProject = new MavenProject(new FilePath(upstreamReposDir,
                         ghRepo.getName()), mavenHome, mavenOpts, launcher, listener);
                 mavenProject.build(mavenArgLine, envVars, buildLogger);
@@ -133,26 +137,22 @@ public class UpstreamReposBuilder extends Builder {
      * @param prSourceBranch source branch of the PR
      * @param prRepoOwner    owner of the repository with the source PR branch
      * @param github         GitHub API object used to talk to GitHub REST interface
-     * @return Map of upstream repositories (with specific branches) that need to be build before the base repository
+     * @return Map of upstream repositories with git refspecs that need to be build before the base repository
      */
-    private Map<KieGitHubRepository, String> gatherUpstreamReposToBuild(String prRepoName, String prSourceBranch, String prTargetBranch, String prRepoOwner, GitHubRepositoryList kieRepoList, GitHub github) {
-        Map<KieGitHubRepository, String> upstreamRepos = new LinkedHashMap<KieGitHubRepository, String>();
+    private Map<KieGitHubRepository, RefSpec> gatherUpstreamReposToBuild(String prRepoName, String prSourceBranch, String prTargetBranch, String prRepoOwner, GitHubRepositoryList kieRepoList, GitHub github) {
+        Map<KieGitHubRepository, RefSpec> upstreamRepos = new LinkedHashMap<>();
         for (KieGitHubRepository kieRepo : kieRepoList.getList()) {
             String kieRepoName = kieRepo.getName();
             if (kieRepoName.equals(prRepoName)) {
                 // we encountered the base repo, so all upstream repos were already processed and we can return the result
                 return upstreamRepos;
             }
-            if (GitHubUtils.checkBranchExists(prRepoOwner + "/" + kieRepoName, prSourceBranch, github) &&
-                    GitHubUtils.checkHasOpenPRAssociated(kieRepo.getOwner() + "/" + kieRepoName, prSourceBranch, prRepoOwner, github)) {
-                upstreamRepos.put(new KieGitHubRepository(prRepoOwner, kieRepoName), prSourceBranch);
-            } else {
-                // otherwise just use the current target branch for that repo (we will build the most up to date sources)
-                // this gets a little tricky as we need figure out which uberfire branch matches the target branches for KIE
-                // e.g. for KIE 6.3.x branch we need UF 0.7.x and Dashuilder 0.3.x branches
-                String baseBranch = kieRepo.determineBaseBranch(prRepoName, prTargetBranch);
-                upstreamRepos.put(kieRepo, baseBranch);
-            }
+            Optional<GHPullRequest> upstreamRepoPR = GitHubUtils.findOpenPRWithSourceBranch(new GitHubRepository(kieRepo.getOwner(), kieRepo.getName()), prSourceBranch, prRepoOwner, github);
+            String baseBranch = kieRepo.determineBaseBranch(prRepoName, prTargetBranch);
+            RefSpec refspec = new RefSpec(upstreamRepoPR
+                    .map(pr -> "pull/" + pr.getNumber() + "/merge:pr" + prSourceBranch + "-" + pr.getNumber() + "-merged")
+                    .orElse(baseBranch + ":" + baseBranch + "-pr-build"));
+            upstreamRepos.put(kieRepo, refspec);
         }
         return upstreamRepos;
     }

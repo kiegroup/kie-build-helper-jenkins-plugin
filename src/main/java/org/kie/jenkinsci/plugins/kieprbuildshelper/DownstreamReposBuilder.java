@@ -10,6 +10,8 @@ import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import net.sf.json.JSONObject;
+import org.eclipse.jgit.transport.RefSpec;
+import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
@@ -17,6 +19,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import java.io.PrintStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Custom {@link Builder} which allows building downstream repositories during automated Jenkins PR builds.
@@ -120,7 +123,7 @@ public class DownstreamReposBuilder extends Builder {
             String prRepoName = prSummary.getTargetRepo();
             kieRepoList.filterOutUnnecessaryUpstreamRepos(prRepoName);
 
-            Map<KieGitHubRepository, String> downstreamRepos =
+            Map<KieGitHubRepository, RefSpec> downstreamRepos =
                     gatherDownstreamReposToBuild(prRepoName, prSummary.getSourceBranch(), prTargetBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);
             GitHubUtils.logRepositories(downstreamRepos, buildLogger);
             GitHubUtils.cloneRepositories(downstreamReposDir, downstreamRepos, listener);
@@ -128,8 +131,7 @@ public class DownstreamReposBuilder extends Builder {
             String mavenHome = globalSettings.getMavenHome();
 
             String mavenOpts = globalSettings.getMavenOpts();
-            for (Map.Entry<KieGitHubRepository, String> entry : downstreamRepos.entrySet()) {
-                KieGitHubRepository ghRepo = entry.getKey();
+            for (KieGitHubRepository ghRepo : downstreamRepos.keySet()) {
                 MavenProject mavenProject = new MavenProject(new FilePath(downstreamReposDir,
                         ghRepo.getName()), mavenHome, mavenOpts, launcher, listener);
                 mavenProject.build(mvnArgLine, envVars, buildLogger);
@@ -154,12 +156,12 @@ public class DownstreamReposBuilder extends Builder {
      * @param sourceBranch  source branch of the PR
      * @param baseRepoOwner owner of the repository with the source PR branch
      * @param github        GitHub API client used to talk to the GitHub REST interface
-     * @return Map of downstream repositories (with specific branches) that need to be build before the base repository
+     * @return Map of downstream repositories (with git refspecs) that need to be build before the base repository
      */
-    private Map<KieGitHubRepository, String> gatherDownstreamReposToBuild(String baseRepoName, String sourceBranch,
+    private Map<KieGitHubRepository, RefSpec> gatherDownstreamReposToBuild(String baseRepoName, String sourceBranch,
                                                                           String targetBranch, String baseRepoOwner,
                                                                           GitHubRepositoryList kieRepoList, GitHub github) {
-        Map<KieGitHubRepository, String> downstreamRepos = new LinkedHashMap<KieGitHubRepository, String>();
+        Map<KieGitHubRepository, RefSpec> downstreamRepos = new LinkedHashMap<>();
         boolean baseRepoFound = false;
         for (KieGitHubRepository kieRepo : kieRepoList.getList()) {
             String kieRepoName = kieRepo.getName();
@@ -171,17 +173,12 @@ public class DownstreamReposBuilder extends Builder {
                 continue;
             }
 
-            boolean branchExists = GitHubUtils.checkBranchExists(baseRepoOwner + "/" + kieRepoName, sourceBranch, github);
-            boolean hasOpenPRAssociated = GitHubUtils.checkHasOpenPRAssociated(kieRepo.getOwner() + "/" + kieRepoName, sourceBranch, baseRepoOwner, github);
-            if (branchExists && hasOpenPRAssociated) {
-                downstreamRepos.put(new KieGitHubRepository(baseRepoOwner, kieRepoName), sourceBranch);
-            } else {
-                // otherwise just use the current target branch for that repo (we will build the most up to date sources)
-                // this gets a little tricky as we need figure out which uberfire branch matches the target branches for KIE
-                // e.g. for KIE 6.3.x branch we need UF 0.7.x and Dashuilder 0.3.x branches
-                String baseBranch = kieRepo.determineBaseBranch(baseRepoName, targetBranch);
-                downstreamRepos.put(kieRepo, baseBranch);
-            }
+            Optional<GHPullRequest> upstreamRepoPR = GitHubUtils.findOpenPRWithSourceBranch(new GitHubRepository(kieRepo.getOwner(), kieRepo.getName()), prSourceBranch, baseRepoOwner, github);
+            String baseBranch = kieRepo.determineBaseBranch(baseRepoName, targetBranch);
+            RefSpec refspec = new RefSpec(upstreamRepoPR
+                    .map(pr -> "pull/" + pr.getNumber() + "/merge:pr" + sourceBranch + "-" + pr.getNumber() + "-merge")
+                    .orElse(baseBranch + ":" + baseBranch + "-pr-build"));
+            downstreamRepos.put(kieRepo, refspec);
         }
         return downstreamRepos;
     }
