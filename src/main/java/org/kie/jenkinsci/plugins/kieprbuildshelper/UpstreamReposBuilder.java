@@ -150,7 +150,7 @@ public class UpstreamReposBuilder extends Builder {
             Optional<GHPullRequest> upstreamRepoPR = GitHubUtils.findOpenPRWithSourceBranch(new GitHubRepository(kieRepo.getOwner(), kieRepo.getName()), prSourceBranch, prRepoOwner, github);
             String baseBranch = kieRepo.determineBaseBranch(prRepoName, prTargetBranch);
             RefSpec refspec = new RefSpec(upstreamRepoPR
-                    .map(pr -> "pull/" + pr.getNumber() + "/merge:pr" + prSourceBranch + "-" + pr.getNumber() + "-merged")
+                    .map(pr -> "pull/" + pr.getNumber() + "/merge:pr" + pr.getNumber() + "-" + prSourceBranch + "-merge")
                     .orElse(baseBranch + ":" + baseBranch + "-pr-build"));
             upstreamRepos.put(kieRepo, refspec);
         }

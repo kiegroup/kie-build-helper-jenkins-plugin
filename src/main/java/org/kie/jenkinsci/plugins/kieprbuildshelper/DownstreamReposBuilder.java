@@ -153,13 +153,13 @@ public class DownstreamReposBuilder extends Builder {
      * Gather list of downstream repositories that needs to be build before the base repository (repository with the PR).
      *
      * @param baseRepoName  GitHub repository name that the PR was submitted against
-     * @param sourceBranch  source branch of the PR
+     * @param prSourceBranch  source branch of the PR
      * @param baseRepoOwner owner of the repository with the source PR branch
      * @param github        GitHub API client used to talk to the GitHub REST interface
      * @return Map of downstream repositories (with git refspecs) that need to be build before the base repository
      */
-    private Map<KieGitHubRepository, RefSpec> gatherDownstreamReposToBuild(String baseRepoName, String sourceBranch,
-                                                                          String targetBranch, String baseRepoOwner,
+    private Map<KieGitHubRepository, RefSpec> gatherDownstreamReposToBuild(String baseRepoName, String prSourceBranch,
+                                                                          String prTargetBranch, String baseRepoOwner,
                                                                           GitHubRepositoryList kieRepoList, GitHub github) {
         Map<KieGitHubRepository, RefSpec> downstreamRepos = new LinkedHashMap<>();
         boolean baseRepoFound = false;
@@ -173,10 +173,10 @@ public class DownstreamReposBuilder extends Builder {
                 continue;
             }
 
-            Optional<GHPullRequest> upstreamRepoPR = GitHubUtils.findOpenPRWithSourceBranch(new GitHubRepository(kieRepo.getOwner(), kieRepo.getName()), prSourceBranch, baseRepoOwner, github);
-            String baseBranch = kieRepo.determineBaseBranch(baseRepoName, targetBranch);
+            Optional<GHPullRequest> upstreamRepoPR = GitHubUtils.findOpenPRWithSourceBranch(new GitHubRepository(kieRepo.getOwner(), kieRepo.getName()), this.prSourceBranch, baseRepoOwner, github);
+            String baseBranch = kieRepo.determineBaseBranch(baseRepoName, prTargetBranch);
             RefSpec refspec = new RefSpec(upstreamRepoPR
-                    .map(pr -> "pull/" + pr.getNumber() + "/merge:pr" + sourceBranch + "-" + pr.getNumber() + "-merge")
+                    .map(pr -> "pull/" + pr.getNumber() + "/merge:pr" + pr.getNumber() + "-" + prSourceBranch + "-merge")
                     .orElse(baseBranch + ":" + baseBranch + "-pr-build"));
             downstreamRepos.put(kieRepo, refspec);
         }
