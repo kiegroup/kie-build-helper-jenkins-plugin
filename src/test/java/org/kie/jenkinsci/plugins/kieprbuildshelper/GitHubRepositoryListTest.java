@@ -23,14 +23,6 @@ import static org.junit.Assert.assertTrue;
 
 public class GitHubRepositoryListTest {
 
-    @Test
-    public void shouldSuccessfullyLoadListForMaster() {
-        GitHubRepositoryList repoList = GitHubRepositoryList.fromClasspathResource(GitHubRepositoryList.KIE_REPO_LIST_MASTER_RESOURCE_PATH);
-        Assert.assertEquals(24, repoList.size());
-        Assert.assertEquals(new KieGitHubRepository("uberfire", "uberfire"), repoList.getList().get(0));
-        Assert.assertEquals(new KieGitHubRepository("jboss-integration", "kie-eap-modules"), repoList.getList().get(23));
-    }
-
     @Test (expected = IllegalArgumentException.class)
     public void shouldReportFailureForNonExistentResource() {
         GitHubRepositoryList repoList = GitHubRepositoryList.fromClasspathResource("non-existing");
