@@ -77,7 +77,7 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
             Map<KieGitHubRepository, RefSpec> upstreamRepos = gatherUpstreamReposToBuild(baseRepository, branch, kieRepoList);
             // clone upstream repositories
             GitHubUtils.logRepositories(upstreamRepos, buildLogger);
-            GitHubUtils.cloneRepositories(upstreamReposDir, upstreamRepos, listener);
+            GitHubUtils.cloneRepositories(upstreamReposDir, upstreamRepos, GitHubUtils.GIT_REFERENCE_BASEDIR, listener);
             KiePRBuildsHelper.KiePRBuildsHelperDescriptor globalSettings = KiePRBuildsHelper.getKiePRBuildsHelperDescriptor();
             // build upstream repositories using Maven
             String mavenHome = globalSettings.getMavenHome();

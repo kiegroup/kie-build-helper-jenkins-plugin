@@ -25,6 +25,7 @@ import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GitHub;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -33,6 +34,8 @@ import java.util.Map;
 import java.util.Optional;
 
 public class GitHubUtils {
+
+    public static final File GIT_REFERENCE_BASEDIR = new File("/home/jenkins/git-repos/");
 
     public static List<GHPullRequest> getOpenPullRequests(GitHubRepository repo, GitHub github) {
         try {
@@ -73,15 +76,15 @@ public class GitHubUtils {
      *
      * @throws InterruptedException when interrupted while performing Git operations
      */
-    public static void cloneFetchCheckout(GitClient gitClient, KieGitHubRepository ghRepo, RefSpec refspec)
+    public static void cloneFetchCheckout(GitClient gitClient, KieGitHubRepository ghRepo, RefSpec refspec, File referenceDir)
             throws InterruptedException {
-        gitClient.clone(ghRepo.getReadOnlyCloneURL(), "origin", true, null);
+        gitClient.clone(ghRepo.getReadOnlyCloneURL(), "origin", true, referenceDir.getAbsolutePath());
         gitClient.fetch("origin", refspec);
         gitClient.checkout().ref(refspec.getDestination()).execute();
     }
 
     public static void cloneRepositories(FilePath basedir, Map<KieGitHubRepository, RefSpec> repositoriesWithRefspec,
-                                         BuildListener listener) throws IOException, InterruptedException {
+                                         File referenceBasedir, BuildListener listener) throws IOException, InterruptedException {
         for (Map.Entry<KieGitHubRepository, RefSpec> entry : repositoriesWithRefspec.entrySet()) {
             KieGitHubRepository ghRepo = entry.getKey();
             RefSpec refspec = entry.getValue();
@@ -91,7 +94,8 @@ public class GitHubUtils {
                     .in(repoDir)
                     .using("git")
                     .getClient();
-            cloneFetchCheckout(gitClient, ghRepo, refspec);
+            File referenceDir = new File(referenceBasedir, ghRepo.getName() + ".git");
+            cloneFetchCheckout(gitClient, ghRepo, refspec, referenceDir);
         }
     }
 

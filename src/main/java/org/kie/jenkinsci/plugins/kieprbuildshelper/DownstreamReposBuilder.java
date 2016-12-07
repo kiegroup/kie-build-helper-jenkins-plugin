@@ -126,7 +126,7 @@ public class DownstreamReposBuilder extends Builder {
             Map<KieGitHubRepository, RefSpec> downstreamRepos =
                     gatherDownstreamReposToBuild(prRepoName, prSummary.getSourceBranch(), prTargetBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);
             GitHubUtils.logRepositories(downstreamRepos, buildLogger);
-            GitHubUtils.cloneRepositories(downstreamReposDir, downstreamRepos, listener);
+            GitHubUtils.cloneRepositories(downstreamReposDir, downstreamRepos, GitHubUtils.GIT_REFERENCE_BASEDIR, listener);
             // build downstream repositories using Maven
             String mavenHome = globalSettings.getMavenHome();
 

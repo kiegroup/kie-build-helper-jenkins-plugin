@@ -11,7 +11,6 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import net.sf.json.JSONObject;
 import org.eclipse.jgit.transport.RefSpec;
-import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -21,7 +20,6 @@ import java.io.PrintStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Custom {@link Builder} which allows building upstream repositories during automated PR builds.
@@ -111,7 +109,7 @@ public class UpstreamReposBuilder extends Builder {
                     gatherUpstreamReposToBuild(prRepoName, prSourceBranch, prTargetBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);
             // clone upstream repositories
             GitHubUtils.logRepositories(upstreamRepos, buildLogger);
-            GitHubUtils.cloneRepositories(upstreamReposDir, upstreamRepos, listener);
+            GitHubUtils.cloneRepositories(upstreamReposDir, upstreamRepos, GitHubUtils.GIT_REFERENCE_BASEDIR, listener);
             // build upstream repositories using Maven
             String mavenHome = globalSettings.getMavenHome();
             String mavenArgLine = globalSettings.getUpstreamBuildsMavenArgLine();
