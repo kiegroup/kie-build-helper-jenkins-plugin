@@ -145,7 +145,8 @@ public class UpstreamReposBuilder extends Builder {
                 // we encountered the base repo, so all upstream repos were already processed and we can return the result
                 return upstreamRepos;
             }
-            Optional<GHPullRequest> upstreamRepoPR = GitHubUtils.findOpenPRWithSourceBranch(new GitHubRepository(kieRepo.getOwner(), kieRepo.getName()), prSourceBranch, prRepoOwner, github);
+            Optional<GHPullRequest> upstreamRepoPR = GitHubUtils.findOpenPullRequest(
+                    new GitHubRepository(kieRepo.getOwner(), kieRepo.getName()), prSourceBranch, prRepoOwner, github);
             String baseBranch = kieRepo.determineBaseBranch(prRepoName, prTargetBranch);
             RefSpec refspec = new RefSpec(upstreamRepoPR
                     .map(pr -> "pull/" + pr.getNumber() + "/merge:pr" + pr.getNumber() + "-" + prSourceBranch + "-merge")

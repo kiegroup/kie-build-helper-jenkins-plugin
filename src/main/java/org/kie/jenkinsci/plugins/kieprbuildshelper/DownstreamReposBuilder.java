@@ -16,6 +16,7 @@ import org.kohsuke.github.GitHub;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -173,7 +174,8 @@ public class DownstreamReposBuilder extends Builder {
                 continue;
             }
 
-            Optional<GHPullRequest> upstreamRepoPR = GitHubUtils.findOpenPRWithSourceBranch(new GitHubRepository(kieRepo.getOwner(), kieRepo.getName()), this.prSourceBranch, baseRepoOwner, github);
+            Optional<GHPullRequest> upstreamRepoPR = GitHubUtils.findOpenPullRequest(
+                    new GitHubRepository(kieRepo.getOwner(), kieRepo.getName()), this.prSourceBranch, baseRepoOwner, github);
             String baseBranch = kieRepo.determineBaseBranch(baseRepoName, prTargetBranch);
             RefSpec refspec = new RefSpec(upstreamRepoPR
                     .map(pr -> "pull/" + pr.getNumber() + "/merge:pr" + pr.getNumber() + "-" + prSourceBranch + "-merge")

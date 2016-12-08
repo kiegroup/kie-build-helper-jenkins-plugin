@@ -51,7 +51,7 @@ public class GitHubUtils {
      * @param github       GitHub API object
      * @return optionally pull request which is both open and created against the specific source branch
      */
-    public static Optional<GHPullRequest> findOpenPRWithSourceBranch(GitHubRepository repo, String sourceBranch, String prAuthor, GitHub github) {
+    public static Optional<GHPullRequest> findOpenPullRequest(GitHubRepository repo, String sourceBranch, String prAuthor, GitHub github) {
         try {
             List<GHPullRequest> prs = getOpenPullRequests(repo, github);
             for (GHPullRequest pr : prs) {
