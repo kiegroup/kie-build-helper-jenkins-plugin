@@ -22,31 +22,30 @@ import java.io.IOException;
 
 public class GitHubPRSummary {
 
-    // TODO save as GitHubRepository 'targetRepo' (contains owner + name)
-    private final String targetRepo;
-    private final String targetRepoOwner;
-    private final int id;
+    private final GitHubRepository targetRepo;
+    private final int number;
     private final String sourceBranch;
     private final String sourceRepoOwner;
+    private final boolean mergeable;
 
-    public GitHubPRSummary(String targetRepo, String targetRepoOwner, int id, String sourceBranch, String sourceRepoOwner) {
+    public GitHubPRSummary(GitHubRepository targetRepo, int number, String sourceBranch, String sourceRepoOwner, boolean mergeable) {
         this.targetRepo = targetRepo;
-        this.targetRepoOwner = targetRepoOwner;
-        this.id = id;
+        this.number = number;
         this.sourceBranch = sourceBranch;
         this.sourceRepoOwner = sourceRepoOwner;
+        this.mergeable = mergeable;
     }
 
-    public String getTargetRepo() {
+    public GitHubRepository getTargetRepo() {
         return targetRepo;
     }
 
-    public String getTargetRepoOwner() {
-        return targetRepoOwner;
+    public String getTargetRepoName() {
+        return targetRepo.getName();
     }
 
-    public int getId() {
-        return id;
+    public int getNumber() {
+        return number;
     }
 
     public String getSourceBranch() {
@@ -57,32 +56,37 @@ public class GitHubPRSummary {
         return sourceRepoOwner;
     }
 
+    public boolean isMergeable() {
+        return mergeable;
+    }
+
     /**
      * Creates a PR summary from provided link, getting some of the info directly from Github.
      *
      * @param prLink pull request link, e.g. https://github.com/droolsjbpm/drools-wb/pull/77
      * @param github configured Github instance used to talk to Github REST API
      *
-     * @return summary info about GitHub PR
+     * @return summary about the GitHub PR
      */
     public static GitHubPRSummary fromPRLink(String prLink, GitHub github) {
         String str = preProcessPRLink(prLink);
         String[] parts = str.split("/");
         String targetRepoOwner = parts[0];
-        String targetRepo = parts[1];
+        String targetRepoName = parts[1];
+        GitHubRepository targetRepo = new GitHubRepository(targetRepoOwner, targetRepoName);
         // parts[2] == "pull", not needed
-        int id = Integer.parseInt(parts[3]);
+        int number = Integer.parseInt(parts[3]);
         GHPullRequest pr;
         try {
-            pr = github.getRepository(targetRepoOwner + "/" + targetRepo).getPullRequest(id);
+            pr = github.getRepository(targetRepoOwner + "/" + targetRepoName).getPullRequest(number);
             String sourceRepoOwner = pr.getHead().getRepository().getOwner().getLogin();
             String sourceBranch = pr.getHead().getRef();
             return new GitHubPRSummary(
                     targetRepo,
-                    targetRepoOwner,
-                    id,
+                    number,
                     sourceBranch,
-                    sourceRepoOwner
+                    sourceRepoOwner,
+                    pr.getMergeable()
             );
         } catch (IOException e) {
             throw new RuntimeException("Error when getting info about PR " + prLink, e);
@@ -113,11 +117,11 @@ public class GitHubPRSummary {
     @Override
     public String toString() {
         return "GitHubPRSummary{" +
-                "targetRepo='" + targetRepo + '\'' +
-                ", targetRepoOwner='" + targetRepoOwner + '\'' +
-                ", id=" + id +
+                "targetRepo=" + targetRepo +
+                ", number=" + number +
                 ", sourceBranch='" + sourceBranch + '\'' +
                 ", sourceRepoOwner='" + sourceRepoOwner + '\'' +
+                ", mergeable=" + mergeable +
                 '}';
     }
 
@@ -128,10 +132,9 @@ public class GitHubPRSummary {
 
         GitHubPRSummary that = (GitHubPRSummary) o;
 
-        if (id != that.id) return false;
+        if (number != that.number) return false;
+        if (mergeable != that.mergeable) return false;
         if (targetRepo != null ? !targetRepo.equals(that.targetRepo) : that.targetRepo != null) return false;
-        if (targetRepoOwner != null ? !targetRepoOwner.equals(that.targetRepoOwner) : that.targetRepoOwner != null)
-            return false;
         if (sourceBranch != null ? !sourceBranch.equals(that.sourceBranch) : that.sourceBranch != null) return false;
         return sourceRepoOwner != null ? sourceRepoOwner.equals(that.sourceRepoOwner) : that.sourceRepoOwner == null;
     }
@@ -139,11 +142,10 @@ public class GitHubPRSummary {
     @Override
     public int hashCode() {
         int result = targetRepo != null ? targetRepo.hashCode() : 0;
-        result = 31 * result + (targetRepoOwner != null ? targetRepoOwner.hashCode() : 0);
-        result = 31 * result + id;
+        result = 31 * result + number;
         result = 31 * result + (sourceBranch != null ? sourceBranch.hashCode() : 0);
         result = 31 * result + (sourceRepoOwner != null ? sourceRepoOwner.hashCode() : 0);
+        result = 31 * result + (mergeable ? 1 : 0);
         return result;
     }
-
 }

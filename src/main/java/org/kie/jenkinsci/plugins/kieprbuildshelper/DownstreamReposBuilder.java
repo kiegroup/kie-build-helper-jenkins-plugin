@@ -119,9 +119,8 @@ public class DownstreamReposBuilder extends Builder {
             GitHub github = GitHub.connectUsingOAuth(ghOAuthToken);
             // get info about the PR from variables provided by GitHub Pull Request Builder plugin
             GitHubPRSummary prSummary = GitHubPRSummary.fromPRLink(prLink, github);
-            buildLogger.println(prSummary);
 
-            String prRepoName = prSummary.getTargetRepo();
+            String prRepoName = prSummary.getTargetRepoName();
             kieRepoList.filterOutUnnecessaryUpstreamRepos(prRepoName);
 
             Map<KieGitHubRepository, RefSpec> downstreamRepos =
@@ -174,10 +173,17 @@ public class DownstreamReposBuilder extends Builder {
                 continue;
             }
 
-            Optional<GHPullRequest> upstreamRepoPR = GitHubUtils.findOpenPullRequest(
+            Optional<GitHubPRSummary> downstreamRepoPR = GitHubUtils.findOpenPullRequest(
                     new GitHubRepository(kieRepo.getOwner(), kieRepo.getName()), this.prSourceBranch, baseRepoOwner, github);
+            // in case the PR is there it also needs to be mergeable, if not fail fast
+            downstreamRepoPR.ifPresent(pr -> {
+                if (!pr.isMergeable()) {
+                    throw new RuntimeException("PR " + pr.getNumber() + " for repo " + pr.getTargetRepo() + " is " +
+                            "not automatically mergeable. Please fix the conflicts first!");
+                }
+            });
             String baseBranch = kieRepo.determineBaseBranch(baseRepoName, prTargetBranch);
-            RefSpec refspec = new RefSpec(upstreamRepoPR
+            RefSpec refspec = new RefSpec(downstreamRepoPR
                     .map(pr -> "pull/" + pr.getNumber() + "/merge:pr" + pr.getNumber() + "-" + prSourceBranch + "-merge")
                     .orElse(baseBranch + ":" + baseBranch + "-pr-build"));
             downstreamRepos.put(kieRepo, refspec);

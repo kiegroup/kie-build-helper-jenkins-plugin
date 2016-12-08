@@ -11,7 +11,6 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import net.sf.json.JSONObject;
 import org.eclipse.jgit.transport.RefSpec;
-import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
@@ -103,7 +102,7 @@ public class UpstreamReposBuilder extends Builder {
             // get info about the PR from variables provided by GitHub Pull Request Builder plugin
             GitHubPRSummary prSummary = GitHubPRSummary.fromPRLink(prLink, github);
 
-            String prRepoName = prSummary.getTargetRepo();
+            String prRepoName = prSummary.getTargetRepoName();
             kieRepoList.filterOutUnnecessaryUpstreamRepos(prRepoName);
             Map<KieGitHubRepository, RefSpec> upstreamRepos =
                     gatherUpstreamReposToBuild(prRepoName, prSourceBranch, prTargetBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);
@@ -145,8 +144,15 @@ public class UpstreamReposBuilder extends Builder {
                 // we encountered the base repo, so all upstream repos were already processed and we can return the result
                 return upstreamRepos;
             }
-            Optional<GHPullRequest> upstreamRepoPR = GitHubUtils.findOpenPullRequest(
+            Optional<GitHubPRSummary> upstreamRepoPR = GitHubUtils.findOpenPullRequest(
                     new GitHubRepository(kieRepo.getOwner(), kieRepo.getName()), prSourceBranch, prRepoOwner, github);
+            // in case the PR is there it also needs to be mergeable, if not fail fast
+            upstreamRepoPR.ifPresent(pr -> {
+                if (!pr.isMergeable()) {
+                    throw new RuntimeException("PR " + pr.getNumber() + " for repo " + pr.getTargetRepo() + " is " +
+                            "not automatically mergeable. Please fix the conflicts first!");
+                }
+            });
             String baseBranch = kieRepo.determineBaseBranch(prRepoName, prTargetBranch);
             RefSpec refspec = new RefSpec(upstreamRepoPR
                     .map(pr -> "pull/" + pr.getNumber() + "/merge:pr" + pr.getNumber() + "-" + prSourceBranch + "-merge")

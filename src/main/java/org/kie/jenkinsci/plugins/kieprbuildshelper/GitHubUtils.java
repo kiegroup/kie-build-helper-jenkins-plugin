@@ -51,14 +51,15 @@ public class GitHubUtils {
      * @param github       GitHub API object
      * @return optionally pull request which is both open and created against the specific source branch
      */
-    public static Optional<GHPullRequest> findOpenPullRequest(GitHubRepository repo, String sourceBranch, String prAuthor, GitHub github) {
+    public static Optional<GitHubPRSummary> findOpenPullRequest(GitHubRepository repo, String sourceBranch, String prAuthor, GitHub github) {
         try {
             List<GHPullRequest> prs = getOpenPullRequests(repo, github);
             for (GHPullRequest pr : prs) {
                 // check if the PR source branch and name of the fork are the ones we are looking for
                 if (pr.getHead().getRef().equals(sourceBranch) &&
                         pr.getHead().getRepository().getOwner().getLogin().equals(prAuthor)) {
-                    return Optional.of(pr);
+                    return Optional.of(
+                            new GitHubPRSummary(repo, pr.getNumber(), sourceBranch, prAuthor, pr.getMergeable()));
                 }
             }
             return Optional.empty();
