@@ -49,6 +49,7 @@ public class UpstreamReposBuilder extends Builder {
     private transient String prLink;
     private transient String prSourceBranch;
     private transient String prTargetBranch;
+
     @DataBoundConstructor
     public UpstreamReposBuilder() {
     }

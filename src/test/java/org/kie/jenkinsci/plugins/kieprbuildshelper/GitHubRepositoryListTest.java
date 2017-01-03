@@ -15,7 +15,6 @@
 
 package org.kie.jenkinsci.plugins.kieprbuildshelper;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
@@ -32,11 +31,22 @@ public class GitHubRepositoryListTest {
     public void shouldFilterOutUFAndDashbuilderReposForDroolsRepo() {
         GitHubRepositoryList ghList = GitHubRepositoryList.forBranch("master");
         ghList.filterOutUnnecessaryUpstreamRepos("drools");
+        assertFalse(ghList.contains(new KieGitHubRepository("errai", "errai")));
         assertFalse(ghList.contains(new KieGitHubRepository("uberfire", "uberfire")));
         assertFalse(ghList.contains(new KieGitHubRepository("uberfire", "uberfire-extensions")));
         assertFalse(ghList.contains(new KieGitHubRepository("dashbuilder", "dashbuilder")));
 
         assertTrue(ghList.contains(new KieGitHubRepository("droolsjbpm", "droolsjbpm-knowledge")));
+    }
+
+    @Test
+    public void shouldNotFilterOutErraiAndUFAndDashbuilderReposForDroolsjbpmIntegrationRepo() {
+        GitHubRepositoryList ghList = GitHubRepositoryList.forBranch("master");
+        ghList.filterOutUnnecessaryUpstreamRepos("droolsjbpm-integration");
+        assertTrue(ghList.contains(new KieGitHubRepository("errai", "errai")));
+        assertTrue(ghList.contains(new KieGitHubRepository("uberfire", "uberfire")));
+        assertTrue(ghList.contains(new KieGitHubRepository("droolsjbpm", "droolsjbpm-knowledge")));
+        assertTrue(ghList.contains(new KieGitHubRepository("dashbuilder", "dashbuilder")));
     }
 
 }
