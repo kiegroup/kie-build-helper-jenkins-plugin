@@ -34,6 +34,7 @@ public class KieRepositoryLists {
             add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-tools"));
             add(new KieGitHubRepository("droolsjbpm", "kie-uberfire-extensions"));
             add(new KieGitHubRepository("droolsjbpm", "guvnor"));
+            add(new KieGitHubRepository("droolsjbpm", "kie-wb-playground"));
             add(new KieGitHubRepository("droolsjbpm", "kie-wb-common"));
             add(new KieGitHubRepository("droolsjbpm", "jbpm-form-modeler"));
             add(new KieGitHubRepository("droolsjbpm", "drools-wb"));

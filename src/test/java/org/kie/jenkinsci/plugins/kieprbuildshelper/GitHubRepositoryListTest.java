@@ -24,7 +24,7 @@ public class GitHubRepositoryListTest {
 
     @Test (expected = IllegalArgumentException.class)
     public void shouldReportFailureForNonExistentResource() {
-        GitHubRepositoryList repoList = GitHubRepositoryList.fromClasspathResource("non-existing");
+        GitHubRepositoryList.fromClasspathResource("non-existing");
     }
 
     @Test
