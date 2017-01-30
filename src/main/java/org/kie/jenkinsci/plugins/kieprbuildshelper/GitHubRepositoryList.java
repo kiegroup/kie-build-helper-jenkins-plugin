@@ -24,10 +24,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class GitHubRepositoryList {
-    public static String KIE_REPO_LIST_MASTER_RESOURCE_PATH = "/repository-list-master.txt";
-    public static String KIE_REPO_LIST_6_3_X_RESOURCE_PATH = "/repository-list-6.3.x.txt";
-    public static String KIE_REPO_LIST_6_2_X_RESOURCE_PATH = "/repository-list-6.2.x.txt";
-
     private final List<KieGitHubRepository> list;
 
     public static GitHubRepositoryList fromClasspathResource(String resourcePath) {
