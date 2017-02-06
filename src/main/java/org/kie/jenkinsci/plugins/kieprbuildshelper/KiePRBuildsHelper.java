@@ -46,7 +46,7 @@ public class KiePRBuildsHelper extends JobProperty<Job<?, ?>> {
         private String mavenHome;
         private String mavenOpts;
         private String upstreamBuildsMavenArgLine;
-        private String downstreambuildsMavenArgLine;
+        private String downstreamBuildsMavenArgLine;
 
         public KiePRBuildsHelperDescriptor() {
             super(KiePRBuildsHelper.class);
@@ -56,12 +56,12 @@ public class KiePRBuildsHelper extends JobProperty<Job<?, ?>> {
         @DataBoundConstructor
         public KiePRBuildsHelperDescriptor(String ghOAuthToken, String mavenRepoCacheTgzUrl, String mavenHome,
                                            String mavenOpts, String upstreamBuildsMavenArgLine,
-                                           String downstreambuildsMavenArgLine) {
+                                           String downstreamBuildsMavenArgLine) {
             this.ghOAuthToken = ghOAuthToken;
             this.mavenRepoCacheTgzUrl = mavenRepoCacheTgzUrl;
             this.mavenHome = mavenHome;
             this.upstreamBuildsMavenArgLine = upstreamBuildsMavenArgLine;
-            this.downstreambuildsMavenArgLine = downstreambuildsMavenArgLine;
+            this.downstreamBuildsMavenArgLine = downstreamBuildsMavenArgLine;
             this.mavenOpts = mavenOpts;
         }
 
@@ -71,7 +71,7 @@ public class KiePRBuildsHelper extends JobProperty<Job<?, ?>> {
             mavenRepoCacheTgzUrl = formData.getString("mavenRepoCacheTgzUrl");
             mavenHome = formData.getString("mavenHome");
             upstreamBuildsMavenArgLine = formData.getString("upstreamBuildsMavenArgLine");
-            downstreambuildsMavenArgLine = formData.getString("downstreamBuildsMavenArgLine");
+            downstreamBuildsMavenArgLine = formData.getString("downstreamBuildsMavenArgLine");
             mavenOpts = formData.getString("mavenOpts");
             save();
             return super.configure(req, formData);
@@ -102,8 +102,8 @@ public class KiePRBuildsHelper extends JobProperty<Job<?, ?>> {
             return upstreamBuildsMavenArgLine;
         }
 
-        public String getDownstreambuildsMavenArgLine() {
-            return downstreambuildsMavenArgLine;
+        public String getDownstreamBuildsMavenArgLine() {
+            return downstreamBuildsMavenArgLine;
         }
     }
 
