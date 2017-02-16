@@ -29,6 +29,7 @@ public class KieRepositoryLists {
             add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-knowledge"));
             add(new KieGitHubRepository("droolsjbpm", "drools"));
             add(new KieGitHubRepository("droolsjbpm", "optaplanner"));
+            add(new KieGitHubRepository("droolsjbpm", "kie-dmn"));
             add(new KieGitHubRepository("droolsjbpm", "jbpm"));
             add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-integration"));
             add(new KieGitHubRepository("droolsjbpm", "droolsjbpm-tools"));
