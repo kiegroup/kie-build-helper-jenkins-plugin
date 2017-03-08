@@ -89,6 +89,18 @@ public class GitHubRepositoryList {
         list.remove(new KieGitHubRepository("droolsjbpm", "droolsjbpm-tools"));
         // no need to build docs as other repos do not depend on them
         list.remove(new KieGitHubRepository("droolsjbpm", "kie-docs"));
+
+        if ("kie-docs".equals(prRepoName)) {
+            // we only need to build repos up to "guvnor" as that's what kie-docs-code depends on
+            list.remove(new KieGitHubRepository("droolsjbpm", "kie-wb-playground"));
+            list.remove(new KieGitHubRepository("droolsjbpm", "kie-wb-common"));
+            list.remove(new KieGitHubRepository("droolsjbpm", "jbpm-form-modeler"));
+            list.remove(new KieGitHubRepository("droolsjbpm", "drools-wb"));
+            list.remove(new KieGitHubRepository("droolsjbpm", "optaplanner-wb"));
+            list.remove(new KieGitHubRepository("droolsjbpm", "jbpm-designer"));
+            list.remove(new KieGitHubRepository("droolsjbpm", "jbpm-wb"));
+            list.remove(new KieGitHubRepository("droolsjbpm", "kie-wb-distributions"));
+        }
     }
 
 }
