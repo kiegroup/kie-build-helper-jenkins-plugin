@@ -15,8 +15,12 @@
 
 package org.kie.jenkinsci.plugins.kieprbuildshelper;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.io.IOUtils;
 
 public class KieRepositoryLists {
 
@@ -25,27 +29,12 @@ public class KieRepositoryLists {
             add(new KieGitHubRepository("errai", "errai"));
             add(new KieGitHubRepository("uberfire", "uberfire"));
             add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-build-bootstrap"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-knowledge"));
-            add(new KieGitHubRepository("kiegroup", "drools"));
-            add(new KieGitHubRepository("kiegroup", "optaplanner"));
-            add(new KieGitHubRepository("kiegroup", "jbpm"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-integration"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-tools"));
-            add(new KieGitHubRepository("kiegroup", "kie-uberfire-extensions"));
-            add(new KieGitHubRepository("kiegroup", "guvnor"));
-            add(new KieGitHubRepository("kiegroup", "kie-wb-playground"));
-            add(new KieGitHubRepository("kiegroup", "kie-wb-common"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-form-modeler"));
-            add(new KieGitHubRepository("kiegroup", "drools-wb"));
-            add(new KieGitHubRepository("kiegroup", "optaplanner-wb"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-designer"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-wb"));
-            add(new KieGitHubRepository("kiegroup", "kie-docs"));
-            add(new KieGitHubRepository("kiegroup", "kie-wb-distributions"));
         }};
+        repos.addAll(fetchKiegroupRepositoryList(createUrlForRepositoryList("master")));
         return new GitHubRepositoryList(repos);
     }
+
+
 
     public static GitHubRepositoryList getListFor65xBranch() {
         List<KieGitHubRepository> repos = new ArrayList<KieGitHubRepository>() {{
@@ -53,28 +42,8 @@ public class KieRepositoryLists {
             add(new KieGitHubRepository("uberfire", "uberfire"));
             add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
             add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-build-bootstrap"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-knowledge"));
-            add(new KieGitHubRepository("kiegroup", "drools"));
-            add(new KieGitHubRepository("kiegroup", "optaplanner"));
-            add(new KieGitHubRepository("kiegroup", "jbpm"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-integration"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-tools"));
-            add(new KieGitHubRepository("kiegroup", "kie-uberfire-extensions"));
-            add(new KieGitHubRepository("kiegroup", "guvnor"));
-            add(new KieGitHubRepository("kiegroup", "kie-wb-common"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-form-modeler"));
-            add(new KieGitHubRepository("kiegroup", "drools-wb"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-designer"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-console-ng"));
-            add(new KieGitHubRepository("kiegroup", "dashboard-builder"));
-            add(new KieGitHubRepository("kiegroup", "optaplanner-wb"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-dashboard"));
-            add(new KieGitHubRepository("kiegroup", "kie-docs"));
-            add(new KieGitHubRepository("kiegroup", "kie-wb-distributions"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-build-distribution"));
-            add(new KieGitHubRepository("jboss-integration", "kie-eap-modules"));
         }};
+        repos.addAll(fetchKiegroupRepositoryList(createUrlForRepositoryList("6.5.x")));
         return new GitHubRepositoryList(repos);
     }
 
@@ -84,28 +53,8 @@ public class KieRepositoryLists {
             add(new KieGitHubRepository("uberfire", "uberfire"));
             add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
             add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-build-bootstrap"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-knowledge"));
-            add(new KieGitHubRepository("kiegroup", "drools"));
-            add(new KieGitHubRepository("kiegroup", "optaplanner"));
-            add(new KieGitHubRepository("kiegroup", "jbpm"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-integration"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-tools"));
-            add(new KieGitHubRepository("kiegroup", "kie-uberfire-extensions"));
-            add(new KieGitHubRepository("kiegroup", "guvnor"));
-            add(new KieGitHubRepository("kiegroup", "kie-wb-common"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-form-modeler"));
-            add(new KieGitHubRepository("kiegroup", "drools-wb"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-designer"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-console-ng"));
-            add(new KieGitHubRepository("kiegroup", "dashboard-builder"));
-            add(new KieGitHubRepository("kiegroup", "optaplanner-wb"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-dashboard"));
-            add(new KieGitHubRepository("kiegroup", "kie-docs"));
-            add(new KieGitHubRepository("kiegroup", "kie-wb-distributions"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-build-distribution"));
-            add(new KieGitHubRepository("jboss-integration", "kie-eap-modules"));
         }};
+        repos.addAll(fetchKiegroupRepositoryList(createUrlForRepositoryList("6.4.x")));
         return new GitHubRepositoryList(repos);
     }
 
@@ -114,27 +63,8 @@ public class KieRepositoryLists {
             add(new KieGitHubRepository("uberfire", "uberfire"));
             add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
             add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-build-bootstrap"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-knowledge"));
-            add(new KieGitHubRepository("kiegroup", "drools"));
-            add(new KieGitHubRepository("kiegroup", "optaplanner"));
-            add(new KieGitHubRepository("kiegroup", "jbpm"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-integration"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-tools"));
-            add(new KieGitHubRepository("kiegroup", "kie-uberfire-extensions"));
-            add(new KieGitHubRepository("kiegroup", "guvnor"));
-            add(new KieGitHubRepository("kiegroup", "kie-wb-common"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-form-modeler"));
-            add(new KieGitHubRepository("kiegroup", "drools-wb"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-designer"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-console-ng"));
-            add(new KieGitHubRepository("kiegroup", "dashboard-builder"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-dashboard"));
-            add(new KieGitHubRepository("kiegroup", "kie-docs"));
-            add(new KieGitHubRepository("kiegroup", "kie-wb-distributions"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-build-distribution"));
-            add(new KieGitHubRepository("jboss-integration", "kie-eap-modules"));
         }};
+        repos.addAll(fetchKiegroupRepositoryList(createUrlForRepositoryList("6.3.x")));
         return new GitHubRepositoryList(repos);
     }
 
@@ -143,27 +73,8 @@ public class KieRepositoryLists {
             add(new KieGitHubRepository("uberfire", "uberfire"));
             add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
             add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-build-bootstrap"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-knowledge"));
-            add(new KieGitHubRepository("kiegroup", "drools"));
-            add(new KieGitHubRepository("kiegroup", "optaplanner"));
-            add(new KieGitHubRepository("kiegroup", "jbpm"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-integration"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-tools"));
-            add(new KieGitHubRepository("kiegroup", "kie-uberfire-extensions"));
-            add(new KieGitHubRepository("kiegroup", "guvnor"));
-            add(new KieGitHubRepository("kiegroup", "kie-wb-common"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-form-modeler"));
-            add(new KieGitHubRepository("kiegroup", "drools-wb"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-designer"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-console-ng"));
-            add(new KieGitHubRepository("kiegroup", "dashboard-builder"));
-            add(new KieGitHubRepository("kiegroup", "jbpm-dashboard"));
-            add(new KieGitHubRepository("kiegroup", "kie-docs"));
-            add(new KieGitHubRepository("kiegroup", "kie-wb-distributions"));
-            add(new KieGitHubRepository("kiegroup", "droolsjbpm-build-distribution"));
-            add(new KieGitHubRepository("jboss-integration", "kie-eap-modules"));
         }};
+        repos.addAll(fetchKiegroupRepositoryList(createUrlForRepositoryList("6.2.x")));
         return new GitHubRepositoryList(repos);
     }
 
@@ -178,6 +89,27 @@ public class KieRepositoryLists {
         mappings.add(new BranchMapping("0.7.x", "0.3.x", "6.3.x"));
         mappings.add(new BranchMapping("0.5.x", "0.2.x", "6.2.x"));
         return mappings;
+    }
+
+    private static String createUrlForRepositoryList(String branch) {
+        return "https://raw.githubusercontent.com/kiegroup/droolsjbpm-build-bootstrap/" + branch + "/script/repository-list.txt";
+    }
+
+    public static List<KieGitHubRepository> fetchKiegroupRepositoryList(String reposFileUrl) {
+        List<KieGitHubRepository> repos = new ArrayList<>();
+        try {
+            URL reposFile = new URL(reposFileUrl);
+            for (String repoName : IOUtils.readLines(reposFile.openStream())) {
+                if ("kie-eap-modules".equals(repoName)) {
+                    repos.add(new KieGitHubRepository("jboss-integration", repoName));
+                } else {
+                    repos.add(new KieGitHubRepository("kiegroup", repoName));
+                }
+            };
+        } catch (IOException e) {
+            throw new RuntimeException("Can not fetch Kiegroup repository list '" + reposFileUrl + "'!", e);
+        }
+        return repos;
     }
 
     public static String getBaseBranchFor(String repo, String otherRepo, String otherBranch) {
