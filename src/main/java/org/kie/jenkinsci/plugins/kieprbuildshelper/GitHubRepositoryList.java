@@ -86,20 +86,20 @@ public class GitHubRepositoryList {
             list.remove(new KieGitHubRepository("dashbuilder", "dashbuilder"));
         }
         // nothing depends on stuff from -tools repo
-        list.remove(new KieGitHubRepository("droolsjbpm", "droolsjbpm-tools"));
+        list.remove(new KieGitHubRepository("kiegroup", "droolsjbpm-tools"));
         // no need to build docs as other repos do not depend on them
-        list.remove(new KieGitHubRepository("droolsjbpm", "kie-docs"));
+        list.remove(new KieGitHubRepository("kiegroup", "kie-docs"));
 
         if ("kie-docs".equals(prRepoName)) {
             // we only need to build repos up to "guvnor" as that's what kie-docs-code depends on
-            list.remove(new KieGitHubRepository("droolsjbpm", "kie-wb-playground"));
-            list.remove(new KieGitHubRepository("droolsjbpm", "kie-wb-common"));
-            list.remove(new KieGitHubRepository("droolsjbpm", "jbpm-form-modeler"));
-            list.remove(new KieGitHubRepository("droolsjbpm", "drools-wb"));
-            list.remove(new KieGitHubRepository("droolsjbpm", "optaplanner-wb"));
-            list.remove(new KieGitHubRepository("droolsjbpm", "jbpm-designer"));
-            list.remove(new KieGitHubRepository("droolsjbpm", "jbpm-wb"));
-            list.remove(new KieGitHubRepository("droolsjbpm", "kie-wb-distributions"));
+            list.remove(new KieGitHubRepository("kiegroup", "kie-wb-playground"));
+            list.remove(new KieGitHubRepository("kiegroup", "kie-wb-common"));
+            list.remove(new KieGitHubRepository("kiegroup", "jbpm-form-modeler"));
+            list.remove(new KieGitHubRepository("kiegroup", "drools-wb"));
+            list.remove(new KieGitHubRepository("kiegroup", "optaplanner-wb"));
+            list.remove(new KieGitHubRepository("kiegroup", "jbpm-designer"));
+            list.remove(new KieGitHubRepository("kiegroup", "jbpm-wb"));
+            list.remove(new KieGitHubRepository("kiegroup", "kie-wb-distributions"));
         }
     }
 

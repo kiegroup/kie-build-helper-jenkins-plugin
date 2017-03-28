@@ -36,7 +36,7 @@ public class GitHubRepositoryListTest {
         assertFalse(ghList.contains(new KieGitHubRepository("uberfire", "uberfire-extensions")));
         assertFalse(ghList.contains(new KieGitHubRepository("dashbuilder", "dashbuilder")));
 
-        assertTrue(ghList.contains(new KieGitHubRepository("droolsjbpm", "droolsjbpm-knowledge")));
+        assertTrue(ghList.contains(new KieGitHubRepository("kiegroup", "droolsjbpm-knowledge")));
     }
 
     @Test
@@ -45,7 +45,7 @@ public class GitHubRepositoryListTest {
         ghList.filterOutUnnecessaryUpstreamRepos("droolsjbpm-integration");
         assertTrue(ghList.contains(new KieGitHubRepository("errai", "errai")));
         assertTrue(ghList.contains(new KieGitHubRepository("uberfire", "uberfire")));
-        assertTrue(ghList.contains(new KieGitHubRepository("droolsjbpm", "droolsjbpm-knowledge")));
+        assertTrue(ghList.contains(new KieGitHubRepository("kiegroup", "droolsjbpm-knowledge")));
         assertTrue(ghList.contains(new KieGitHubRepository("dashbuilder", "dashbuilder")));
     }
 
