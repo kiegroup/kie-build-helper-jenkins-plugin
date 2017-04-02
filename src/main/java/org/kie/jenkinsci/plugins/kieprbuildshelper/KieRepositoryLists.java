@@ -30,7 +30,7 @@ public class KieRepositoryLists {
             add(new KieGitHubRepository("uberfire", "uberfire"));
             add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
         }};
-        repos.addAll(fetchKiegroupRepositoryList(createUrlForRepositoryList("master")));
+        repos.addAll(fetchRepositoryList(createUrlForRepositoryList("kiegroup", "master"), "kiegroup"));
         return new GitHubRepositoryList(repos);
     }
 
@@ -43,7 +43,7 @@ public class KieRepositoryLists {
             add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
             add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
         }};
-        repos.addAll(fetchKiegroupRepositoryList(createUrlForRepositoryList("6.5.x")));
+        repos.addAll(fetchRepositoryList(createUrlForRepositoryList("droolsjbpm", "6.5.x"), "droolsjbpm"));
         return new GitHubRepositoryList(repos);
     }
 
@@ -54,7 +54,7 @@ public class KieRepositoryLists {
             add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
             add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
         }};
-        repos.addAll(fetchKiegroupRepositoryList(createUrlForRepositoryList("6.4.x")));
+        repos.addAll(fetchRepositoryList(createUrlForRepositoryList("droolsjbpm", "6.4.x"), "droolsjbpm"));
         return new GitHubRepositoryList(repos);
     }
 
@@ -64,7 +64,7 @@ public class KieRepositoryLists {
             add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
             add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
         }};
-        repos.addAll(fetchKiegroupRepositoryList(createUrlForRepositoryList("6.3.x")));
+        repos.addAll(fetchRepositoryList(createUrlForRepositoryList("droolsjbpm", "6.3.x"), "droolsjbpm"));
         return new GitHubRepositoryList(repos);
     }
 
@@ -74,7 +74,7 @@ public class KieRepositoryLists {
             add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
             add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
         }};
-        repos.addAll(fetchKiegroupRepositoryList(createUrlForRepositoryList("6.2.x")));
+        repos.addAll(fetchRepositoryList(createUrlForRepositoryList("droolsjbpm", "6.2.x"), "droolsjbpm"));
         return new GitHubRepositoryList(repos);
     }
 
@@ -91,11 +91,11 @@ public class KieRepositoryLists {
         return mappings;
     }
 
-    private static String createUrlForRepositoryList(String branch) {
-        return "https://raw.githubusercontent.com/kiegroup/droolsjbpm-build-bootstrap/" + branch + "/script/repository-list.txt";
+    private static String createUrlForRepositoryList(String orgUnit, String branch) {
+        return "https://raw.githubusercontent.com/" + orgUnit  + "/droolsjbpm-build-bootstrap/" + branch + "/script/repository-list.txt";
     }
 
-    public static List<KieGitHubRepository> fetchKiegroupRepositoryList(String reposFileUrl) {
+    public static List<KieGitHubRepository> fetchRepositoryList(String reposFileUrl, String orgUnit) {
         List<KieGitHubRepository> repos = new ArrayList<>();
         try {
             URL reposFile = new URL(reposFileUrl);
@@ -103,7 +103,7 @@ public class KieRepositoryLists {
                 if ("kie-eap-modules".equals(repoName)) {
                     repos.add(new KieGitHubRepository("jboss-integration", repoName));
                 } else {
-                    repos.add(new KieGitHubRepository("kiegroup", repoName));
+                    repos.add(new KieGitHubRepository(orgUnit, repoName));
                 }
             };
         } catch (IOException e) {

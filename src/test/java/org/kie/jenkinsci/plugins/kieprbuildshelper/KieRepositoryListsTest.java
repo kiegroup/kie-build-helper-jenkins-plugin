@@ -37,7 +37,7 @@ public class KieRepositoryListsTest {
 
     @Test(expected = RuntimeException.class)
     public void fetchRepositoryFromNonExistingUrl() {
-        KieRepositoryLists.fetchKiegroupRepositoryList("https://github.com/non-existing-url-for.testing");
+        KieRepositoryLists.fetchRepositoryList("https://github.com/non-existing-url-for.testing");
     }
 
 }
