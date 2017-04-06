@@ -22,14 +22,9 @@ import static org.junit.Assert.assertTrue;
 
 public class GitHubRepositoryListTest {
 
-    @Test (expected = IllegalArgumentException.class)
-    public void shouldReportFailureForNonExistentResource() {
-        GitHubRepositoryList.fromClasspathResource("non-existing");
-    }
-
     @Test
     public void shouldFilterOutUFAndDashbuilderReposForDroolsRepo() {
-        GitHubRepositoryList ghList = GitHubRepositoryList.forBranch("master");
+        GitHubRepositoryList ghList = KieRepositoryLists.getListForBranch("master");
         ghList.filterOutUnnecessaryUpstreamRepos("drools");
         assertFalse(ghList.contains(new KieGitHubRepository("errai", "errai")));
         assertFalse(ghList.contains(new KieGitHubRepository("uberfire", "uberfire")));
@@ -41,7 +36,7 @@ public class GitHubRepositoryListTest {
 
     @Test
     public void shouldNotFilterOutErraiAndUFAndDashbuilderReposForDroolsjbpmIntegrationRepo() {
-        GitHubRepositoryList ghList = GitHubRepositoryList.forBranch("master");
+        GitHubRepositoryList ghList = KieRepositoryLists.getListForBranch("master");
         ghList.filterOutUnnecessaryUpstreamRepos("droolsjbpm-integration");
         assertTrue(ghList.contains(new KieGitHubRepository("errai", "errai")));
         assertTrue(ghList.contains(new KieGitHubRepository("uberfire", "uberfire")));

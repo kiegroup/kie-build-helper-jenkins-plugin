@@ -24,7 +24,7 @@ public class KieRepositoryListsTest {
 
     @Test
     public void fetchRepositoryListForMaster() {
-        List<KieGitHubRepository> kieRepos = KieRepositoryLists.getListForMasterBranch().getList();
+        List<KieGitHubRepository> kieRepos = KieRepositoryLists.getListForBranch("master").getList();
         // don't do any specific assertions as the repo list may change at any time as the test would then start failing
         // at least the manually added errai, uf and dashbuilder repos need to present though
         Assertions.assertThat(kieRepos.size()).isGreaterThan(3);
@@ -35,9 +35,28 @@ public class KieRepositoryListsTest {
         );
     }
 
+    @Test
+    public void fetchRepositoryListFor65x() {
+        List<KieGitHubRepository> kieRepos = KieRepositoryLists.getListForBranch("6.5.x").getList();
+        // don't do any specific assertions as the repo list may change at any time as the test would then start failing
+        // at least the manually added errai, uf and dashbuilder repos need to present though
+        Assertions.assertThat(kieRepos.size()).isGreaterThan(3);
+        Assertions.assertThat(kieRepos).contains(
+                new KieGitHubRepository("uberfire", "uberfire"),
+                new KieGitHubRepository("uberfire", "uberfire-extensions"),
+                new KieGitHubRepository("dashbuilder", "dashbuilder"),
+                new KieGitHubRepository("jboss-integration", "kie-eap-modules")
+        );
+    }
+
+    @Test (expected = IllegalArgumentException.class)
+    public void fetchRepositoryListForUnknownBranch() {
+        KieRepositoryLists.getListForBranch("unknown-branch");
+    }
+
     @Test(expected = RuntimeException.class)
     public void fetchRepositoryFromNonExistingUrl() {
-        KieRepositoryLists.fetchRepositoryList("https://github.com/non-existing-url-for.testing");
+        KieRepositoryLists.fetchRepositoryList("https://github.com/non-existing-url-for.testing", "test");
     }
 
 }

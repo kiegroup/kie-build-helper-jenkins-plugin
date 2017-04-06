@@ -24,57 +24,55 @@ import org.apache.commons.io.IOUtils;
 
 public class KieRepositoryLists {
 
-    public static GitHubRepositoryList getListForMasterBranch() {
-        List<KieGitHubRepository> repos = new ArrayList<KieGitHubRepository>() {{
-            add(new KieGitHubRepository("errai", "errai"));
-            add(new KieGitHubRepository("uberfire", "uberfire"));
-            add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
-        }};
-        repos.addAll(fetchRepositoryList(createUrlForRepositoryList("kiegroup", "master"), "kiegroup"));
-        return new GitHubRepositoryList(repos);
-    }
+    public static GitHubRepositoryList getListForBranch(String branch) {
+        List<KieGitHubRepository> repos = new ArrayList<KieGitHubRepository>();
+        switch (branch) {
+            case "master":
+                repos.add(new KieGitHubRepository("errai", "errai"));
+                repos.add(new KieGitHubRepository("uberfire", "uberfire"));
+                repos.add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
+                repos.addAll(fetchRepositoryList("kiegroup", "master"));
+                break;
 
+            case "7.0.x": // kiegroup branch
+            case "0.6.x": // dashbuilder branch
+            case "1.0.x": // uberfire branch
+                repos.add(new KieGitHubRepository("errai", "errai"));
+                repos.add(new KieGitHubRepository("uberfire", "uberfire"));
+                repos.add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
+                repos.addAll(fetchRepositoryList("kiegroup", "7.0.x"));
+                break;
 
+            case "6.5.x": // kiegroup branch
+            case "0.5.x": // dashbuilder branch
+            case "0.9.x": // uberfire branch
+                repos.add(new KieGitHubRepository("uberfire", "uberfire"));
+                repos.add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
+                repos.add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
+                repos.addAll(fetchRepositoryList("droolsjbpm", "6.5.x"));
+                break;
 
-    public static GitHubRepositoryList getListFor65xBranch() {
-        List<KieGitHubRepository> repos = new ArrayList<KieGitHubRepository>() {{
-            add(new KieGitHubRepository("errai", "errai"));
-            add(new KieGitHubRepository("uberfire", "uberfire"));
-            add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
-            add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
-        }};
-        repos.addAll(fetchRepositoryList(createUrlForRepositoryList("droolsjbpm", "6.5.x"), "droolsjbpm"));
-        return new GitHubRepositoryList(repos);
-    }
+            case "6.4.x": // kiegroup branch
+            case "0.4.x": // dashbuilder branch
+            case "0.8.x": // uberfire branch
+                repos.add(new KieGitHubRepository("uberfire", "uberfire"));
+                repos.add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
+                repos.add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
+                repos.addAll(fetchRepositoryList("droolsjbpm", "6.4.x"));
+                break;
 
-    public static GitHubRepositoryList getListFor64xBranch() {
-        List<KieGitHubRepository> repos = new ArrayList<KieGitHubRepository>() {{
-            add(new KieGitHubRepository("errai", "errai"));
-            add(new KieGitHubRepository("uberfire", "uberfire"));
-            add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
-            add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
-        }};
-        repos.addAll(fetchRepositoryList(createUrlForRepositoryList("droolsjbpm", "6.4.x"), "droolsjbpm"));
-        return new GitHubRepositoryList(repos);
-    }
+            case "6.3.x": // kiegroup branch
+            case "0.3.x": // dashbuilder branch
+            case "0.7.x": // uberfire branch
+                repos.add(new KieGitHubRepository("uberfire", "uberfire"));
+                repos.add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
+                repos.add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
+                repos.addAll(fetchRepositoryList("droolsjbpm", "6.3.x"));
+                break;
 
-    public static GitHubRepositoryList getListFor63xBranch() {
-        List<KieGitHubRepository> repos = new ArrayList<KieGitHubRepository>() {{
-            add(new KieGitHubRepository("uberfire", "uberfire"));
-            add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
-            add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
-        }};
-        repos.addAll(fetchRepositoryList(createUrlForRepositoryList("droolsjbpm", "6.3.x"), "droolsjbpm"));
-        return new GitHubRepositoryList(repos);
-    }
-
-    public static GitHubRepositoryList getListFor62xBranch() {
-        List<KieGitHubRepository> repos = new ArrayList<KieGitHubRepository>() {{
-            add(new KieGitHubRepository("uberfire", "uberfire"));
-            add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
-            add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
-        }};
-        repos.addAll(fetchRepositoryList(createUrlForRepositoryList("droolsjbpm", "6.2.x"), "droolsjbpm"));
+            default:
+                throw new IllegalArgumentException("Unknown branch '" + branch + "'! Make sure the plugin is aware of the specified branch.");
+        }
         return new GitHubRepositoryList(repos);
     }
 
@@ -84,6 +82,7 @@ public class KieRepositoryLists {
         List<BranchMapping> mappings = new ArrayList<>();
         // branches for errai, uf, dashbuilder, kie
         mappings.add(new BranchMapping("master", "master", "master", "master"));
+        mappings.add(new BranchMapping("master", "1.0.x", "0.6.x", "7.0.x"));
         mappings.add(new BranchMapping("3.2", "0.9.x", "0.5.x", "6.5.x"));
         mappings.add(new BranchMapping("3.2", "0.8.x", "0.4.x", "6.4.x"));
         mappings.add(new BranchMapping("0.7.x", "0.3.x", "6.3.x"));
@@ -91,12 +90,11 @@ public class KieRepositoryLists {
         return mappings;
     }
 
-    private static String createUrlForRepositoryList(String orgUnit, String branch) {
-        return "https://raw.githubusercontent.com/" + orgUnit  + "/droolsjbpm-build-bootstrap/" + branch + "/script/repository-list.txt";
-    }
 
-    public static List<KieGitHubRepository> fetchRepositoryList(String reposFileUrl, String orgUnit) {
+
+    public static List<KieGitHubRepository> fetchRepositoryList(String orgUnit, String branch) {
         List<KieGitHubRepository> repos = new ArrayList<>();
+        String reposFileUrl = createUrlForRepositoryList(orgUnit, branch);
         try {
             URL reposFile = new URL(reposFileUrl);
             for (String repoName : IOUtils.readLines(reposFile.openStream())) {
@@ -105,11 +103,15 @@ public class KieRepositoryLists {
                 } else {
                     repos.add(new KieGitHubRepository(orgUnit, repoName));
                 }
-            };
+            }
         } catch (IOException e) {
-            throw new RuntimeException("Can not fetch Kiegroup repository list '" + reposFileUrl + "'!", e);
+            throw new RuntimeException("Can not fetch kiegroup repository list '" + reposFileUrl + "'!", e);
         }
         return repos;
+    }
+
+    private static String createUrlForRepositoryList(String orgUnit, String branch) {
+        return "https://raw.githubusercontent.com/" + orgUnit  + "/droolsjbpm-build-bootstrap/" + branch + "/script/repository-list.txt";
     }
 
     public static String getBaseBranchFor(String repo, String otherRepo, String otherBranch) {

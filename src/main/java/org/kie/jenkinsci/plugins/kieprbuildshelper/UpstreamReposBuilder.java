@@ -86,7 +86,7 @@ public class UpstreamReposBuilder extends Builder {
             initFromEnvVars(envVars);
             FilePath workspace = build.getWorkspace();
 
-            GitHubRepositoryList kieRepoList = GitHubRepositoryList.forBranch(prTargetBranch);
+
             KiePRBuildsHelper.KiePRBuildsHelperDescriptor globalSettings = KiePRBuildsHelper.getKiePRBuildsHelperDescriptor();
 
             String ghOAuthToken = globalSettings.getGhOAuthToken();
@@ -104,6 +104,7 @@ public class UpstreamReposBuilder extends Builder {
             GitHubPRSummary prSummary = GitHubPRSummary.fromPRLink(prLink, github);
 
             String prRepoName = prSummary.getTargetRepoName();
+            GitHubRepositoryList kieRepoList = KieRepositoryLists.getListForBranch(prTargetBranch);
             kieRepoList.filterOutUnnecessaryUpstreamRepos(prRepoName);
             Map<KieGitHubRepository, RefSpec> upstreamRepos =
                     gatherUpstreamReposToBuild(prRepoName, prSourceBranch, prTargetBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);

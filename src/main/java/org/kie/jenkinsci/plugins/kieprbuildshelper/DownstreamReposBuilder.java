@@ -102,7 +102,7 @@ public class DownstreamReposBuilder extends Builder {
             initFromEnvVars(envVars);
             FilePath workspace = build.getWorkspace();
 
-            GitHubRepositoryList kieRepoList = GitHubRepositoryList.forBranch(prTargetBranch);
+            GitHubRepositoryList kieRepoList = KieRepositoryLists.getListForBranch(prTargetBranch);
 
             KiePRBuildsHelper.KiePRBuildsHelperDescriptor globalSettings = KiePRBuildsHelper.getKiePRBuildsHelperDescriptor();
 

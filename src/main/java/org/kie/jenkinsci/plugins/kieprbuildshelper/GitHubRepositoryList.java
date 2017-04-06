@@ -15,52 +15,11 @@
 
 package org.kie.jenkinsci.plugins.kieprbuildshelper;
 
-import org.apache.commons.io.IOUtils;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class GitHubRepositoryList {
     private final List<KieGitHubRepository> list;
-
-    public static GitHubRepositoryList fromClasspathResource(String resourcePath) {
-        InputStream is = GitHubRepositoryList.class.getResourceAsStream(resourcePath);
-        if (is == null) {
-            throw new IllegalArgumentException("Specified classpath resource '" + resourcePath + "' does not exist!");
-        }
-        List<String> lines;
-        try {
-            lines = IOUtils.readLines(is);
-        } catch (IOException e) {
-            throw new RuntimeException("Error while reading data from classpath resource '" + resourcePath + "'!", e);
-        }
-        List<KieGitHubRepository> list = new ArrayList<KieGitHubRepository>();
-        for (String line : lines) {
-            String[] parts = line.split("/");
-            list.add(new KieGitHubRepository(parts[0], parts[1]));
-        }
-        return new GitHubRepositoryList(list);
-    }
-
-    public static GitHubRepositoryList forBranch(String branch) {
-        // TODO make this work OOTB when new branch is added
-        if ("master".equals(branch)) {
-            return KieRepositoryLists.getListForMasterBranch();
-        } else if (Arrays.asList("6.5.x", "0.9.x", "0.5.x").contains(branch)) {
-            return KieRepositoryLists.getListFor65xBranch();
-        } else if (Arrays.asList("6.4.x", "0.8.x", "0.4.x").contains(branch)) {
-            return KieRepositoryLists.getListFor64xBranch();
-        } else if (Arrays.asList("6.3.x", "0.7.x", "0.3.x").contains(branch)) {
-            return KieRepositoryLists.getListFor63xBranch();
-        } else if (Arrays.asList("6.2.x", "0.5.x", "0.2.x").contains(branch)) {
-            return KieRepositoryLists.getListFor62xBranch();
-        } else {
-            throw new IllegalArgumentException("Invalid target branch '" + branch + "'!");
-        }
-    }
 
     public GitHubRepositoryList(List<KieGitHubRepository> list) {
         this.list = list;

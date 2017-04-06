@@ -67,7 +67,7 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
 
             FilePath workspace = build.getWorkspace();
 
-            GitHubRepositoryList kieRepoList = GitHubRepositoryList.forBranch(branch);
+            GitHubRepositoryList kieRepoList = KieRepositoryLists.getListForBranch(branch);
             FilePath upstreamReposDir = new FilePath(workspace, "upstream-repos");
             // clean-up the destination directory to avoid stale content
             buildLogger.println("Cleaning-up directory " + upstreamReposDir.getRemote());
@@ -113,7 +113,7 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
                 // we encountered the base repo, so all upstream repos were already processed and we can return the result
                 return upstreamRepos;
             }
-            String branch = KieRepositoryLists.getBaseBranchFor(kieRepoName, baseRepoBranch, baseRepoBranch);
+            String branch = KieRepositoryLists.getBaseBranchFor(kieRepoName, baseRepoName, baseRepoBranch);
             upstreamRepos.put(kieRepo, new RefSpec(branch + ":" + branch + "-build"));
         }
         return upstreamRepos;
