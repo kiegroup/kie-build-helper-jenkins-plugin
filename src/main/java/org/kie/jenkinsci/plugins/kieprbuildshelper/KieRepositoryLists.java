@@ -34,6 +34,15 @@ public class KieRepositoryLists {
                 repos.addAll(fetchRepositoryList("kiegroup", "master"));
                 break;
 
+            case "7.2.x": // kiegroup branch
+            case "0.8.x": // dashbuilder branch
+            case "1.2.x": // uberfire branch
+                repos.add(new KieGitHubRepository("errai", "errai"));
+                repos.add(new KieGitHubRepository("uberfire", "uberfire"));
+                repos.add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
+                repos.addAll(fetchRepositoryList("kiegroup", "7.2.x"));
+                break;
+
             case "7.0.x": // kiegroup branch
             case "0.6.x": // dashbuilder branch
             case "1.0.x": // uberfire branch
@@ -52,24 +61,6 @@ public class KieRepositoryLists {
                 repos.addAll(fetchRepositoryList("droolsjbpm", "6.5.x"));
                 break;
 
-            case "6.4.x": // kiegroup branch
-            case "0.4.x": // dashbuilder branch
-            case "0.8.x": // uberfire branch
-                repos.add(new KieGitHubRepository("uberfire", "uberfire"));
-                repos.add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
-                repos.add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
-                repos.addAll(fetchRepositoryList("droolsjbpm", "6.4.x"));
-                break;
-
-            case "6.3.x": // kiegroup branch
-            case "0.3.x": // dashbuilder branch
-            case "0.7.x": // uberfire branch
-                repos.add(new KieGitHubRepository("uberfire", "uberfire"));
-                repos.add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
-                repos.add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
-                repos.addAll(fetchRepositoryList("droolsjbpm", "6.3.x"));
-                break;
-
             default:
                 throw new IllegalArgumentException("Unknown branch '" + branch + "'! Make sure the plugin is aware of the specified branch.");
         }
@@ -82,7 +73,8 @@ public class KieRepositoryLists {
         List<BranchMapping> mappings = new ArrayList<>();
         // branches for errai, uf, dashbuilder, kie
         mappings.add(new BranchMapping("master", "master", "master", "master"));
-        mappings.add(new BranchMapping("master", "1.0.x", "0.6.x", "7.0.x"));
+        mappings.add(new BranchMapping("4.0.x", "1.2.x", "0.8.x", "7.2.x"));
+        mappings.add(new BranchMapping("4.0.x", "1.0.x", "0.6.x", "7.0.x"));
         mappings.add(new BranchMapping("3.2", "0.9.x", "0.5.x", "6.5.x"));
         mappings.add(new BranchMapping("3.2", "0.8.x", "0.4.x", "6.4.x"));
         mappings.add(new BranchMapping("0.7.x", "0.3.x", "6.3.x"));
