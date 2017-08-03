@@ -26,11 +26,9 @@ import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GitHub;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -55,15 +53,14 @@ public class GitHubUtils {
      * @param github       GitHub API object
      * @return optionally pull request which is both open and created against the specific source branch
      */
-    public static Optional<GitHubPRSummary> findOpenPullRequest(GitHubRepository repo, String sourceBranch, String prAuthor, GitHub github) {
+    public static Optional<GitHubPRSummary> findOpenPullRequest(GitHubRepository repo, GitBranch sourceBranch, String prAuthor, GitHub github) {
         try {
             List<GHPullRequest> prs = getOpenPullRequests(repo, github);
             for (GHPullRequest pr : prs) {
                 // check if the PR source branch and name of the fork are the ones we are looking for
-                if (pr.getHead().getRef().equals(sourceBranch) &&
+                if (pr.getHead().getRef().equals(sourceBranch.getName()) &&
                         pr.getHead().getRepository().getOwner().getLogin().equals(prAuthor)) {
-                    return Optional.of(
-                            new GitHubPRSummary(repo, pr.getNumber(), sourceBranch, prAuthor, pr.getMergeable()));
+                    return Optional.of(GitHubPRSummary.fromGHPullRequest(pr));
                 }
             }
             return Optional.empty();
@@ -81,18 +78,18 @@ public class GitHubUtils {
      *
      * @throws InterruptedException when interrupted while performing Git operations
      */
-    public static void cloneFetchCheckout(GitClient gitClient, KieGitHubRepository ghRepo, RefSpec refspec, File referenceDir)
+    public static void cloneFetchCheckout(GitClient gitClient, GitHubRepository ghRepo, RefSpec refspec, File referenceDir)
             throws InterruptedException {
         gitClient.clone(ghRepo.getReadOnlyCloneURL(), "origin", true, referenceDir.getAbsolutePath());
         gitClient.fetch("origin", refspec);
         gitClient.checkout().ref(refspec.getDestination()).execute();
     }
 
-    public static void cloneRepositories(FilePath basedir, Map<KieGitHubRepository, RefSpec> repositoriesWithRefspec,
+    public static void cloneRepositories(FilePath basedir, List<Tuple<GitHubRepository, RefSpec>> repositoriesWithRefspec,
                                          File referenceBasedir, BuildListener listener) throws IOException, InterruptedException {
-        for (Map.Entry<KieGitHubRepository, RefSpec> entry : repositoriesWithRefspec.entrySet()) {
-            KieGitHubRepository ghRepo = entry.getKey();
-            RefSpec refspec = entry.getValue();
+        for (Tuple<GitHubRepository, RefSpec> repoWithRefSpec : repositoriesWithRefspec) {
+            GitHubRepository ghRepo = repoWithRefSpec._1();
+            RefSpec refspec = repoWithRefSpec._2();
             FilePath repoDir = new FilePath(basedir, ghRepo.getName());
             repoDir.mkdirs();
             GitClient gitClient = Git.with(listener, new EnvVars())
@@ -104,12 +101,12 @@ public class GitHubUtils {
         }
     }
 
-    public static void logRepositories(Map<KieGitHubRepository, RefSpec> repos, PrintStream buildLogger) {
+    public static void logRepositories(List<Tuple<GitHubRepository, RefSpec>> repos, PrintStream buildLogger) {
         if (repos.size() > 0) {
-            buildLogger.println("GitHub repositories that will be cloned and build:");
-            for (Map.Entry<KieGitHubRepository, RefSpec> entry : repos.entrySet()) {
+            buildLogger.println("GitHub repositories that will be cloned and built:");
+            for (Tuple<GitHubRepository, RefSpec> repoWithRefSpec : repos) {
                 // print as '<URL>:<refspec>'
-                buildLogger.println("\t" + entry.getKey().getReadOnlyCloneURL() + ":" + entry.getValue());
+                buildLogger.println("\t" + repoWithRefSpec._1().getReadOnlyCloneURL() + ":" + repoWithRefSpec._2());
             }
         } else {
             buildLogger.println("No required GitHub repositories found.");

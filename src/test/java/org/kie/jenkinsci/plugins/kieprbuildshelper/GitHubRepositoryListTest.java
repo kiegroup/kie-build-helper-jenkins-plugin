@@ -15,35 +15,46 @@
 
 package org.kie.jenkinsci.plugins.kieprbuildshelper;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.*;
 
 public class GitHubRepositoryListTest {
 
     @Test
     public void shouldFilterOutUFAndDashbuilderReposForDroolsRepo() {
-        GitHubRepositoryList ghList = KieRepositoryLists.getListForBranch("drools",
-                                                                          "master");
-        ghList.filterOutUnnecessaryUpstreamRepos("drools");
-        assertFalse(ghList.contains(new KieGitHubRepository("errai", "errai")));
-        assertFalse(ghList.contains(new KieGitHubRepository("uberfire", "uberfire")));
-        assertFalse(ghList.contains(new KieGitHubRepository("uberfire", "uberfire-extensions")));
-        assertFalse(ghList.contains(new KieGitHubRepository("dashbuilder", "dashbuilder")));
+        List<Tuple<GitHubRepository, GitBranch>> fullList =
+                RepositoryLists.createFor(new GitHubRepository("kiegroup", "drools"), new GitBranch("7.2.x"));
+        List<Tuple<GitHubRepository, GitBranch>> filtered =
+                RepositoryLists.filterOutUnnecessaryRepos(fullList, new GitHubRepository("kiegroup", "drools"));
+        List<GitHubRepository> repos = filtered.stream().map(Tuple::_1).collect(Collectors.toList());
 
-        assertTrue(ghList.contains(new KieGitHubRepository("kiegroup", "droolsjbpm-knowledge")));
+        assertThat(repos).doesNotContain(
+                new GitHubRepository("errai", "errai"),
+                new GitHubRepository("uberfire", "uberfire"),
+                new GitHubRepository("uberfire", "uberfire-extensions"),
+                new GitHubRepository("dashbuilder", "dashbuilder")
+        );
+        assertThat(repos).contains(new GitHubRepository("kiegroup", "droolsjbpm-knowledge"));
     }
 
     @Test
     public void shouldNotFilterOutErraiAndUFAndDashbuilderReposForDroolsjbpmIntegrationRepo() {
-        GitHubRepositoryList ghList = KieRepositoryLists.getListForBranch("droolsjbpm-integration",
-                                                                          "master");
-        ghList.filterOutUnnecessaryUpstreamRepos("droolsjbpm-integration");
-        assertTrue(ghList.contains(new KieGitHubRepository("errai", "errai")));
-        assertTrue(ghList.contains(new KieGitHubRepository("uberfire", "uberfire")));
-        assertTrue(ghList.contains(new KieGitHubRepository("kiegroup", "droolsjbpm-knowledge")));
-        assertTrue(ghList.contains(new KieGitHubRepository("dashbuilder", "dashbuilder")));
+        List<Tuple<GitHubRepository, GitBranch>> fullList =
+                RepositoryLists.createFor(new GitHubRepository("kiegroup", "droolsjbpm-integration"), GitBranch.MASTER);
+        List<Tuple<GitHubRepository, GitBranch>> filtered =
+                RepositoryLists.filterOutUnnecessaryRepos(fullList, new GitHubRepository("kiegroup", "droolsjbpm-integration"));
+
+        List<GitHubRepository> repos = filtered.stream().map(Tuple::_1).collect(Collectors.toList());
+        assertThat(repos).contains(
+                new GitHubRepository("errai", "errai"),
+                new GitHubRepository("uberfire", "uberfire"),
+                new GitHubRepository("dashbuilder", "dashbuilder"),
+                new GitHubRepository("kiegroup", "droolsjbpm-knowledge")
+        );
     }
 
 }
