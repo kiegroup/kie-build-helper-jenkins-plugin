@@ -30,8 +30,9 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.PrintStream;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Upstream repos builder for standard (non PR) Jenkins builds. As opposed to {@link UpstreamReposBuilder} which is
@@ -41,13 +42,15 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
 
     private final String baseRepository;
     private final String branch;
+    private final MavenBuildConfig mvnBuildConfig;
 
     private transient PrintStream buildLogger;
 
     @DataBoundConstructor
-    public StandardBuildUpstreamReposBuilder(String baseRepository, String branch) {
+    public StandardBuildUpstreamReposBuilder(String baseRepository, String branch, String mvnHome, String mvnOpts, String mvnArgs) {
         this.baseRepository = baseRepository;
         this.branch = branch;
+        this.mvnBuildConfig = new MavenBuildConfig(mvnHome, mvnOpts, mvnArgs);
     }
 
     public String getBaseRepository() {
@@ -58,6 +61,18 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
         return branch;
     }
 
+    public String getMvnHome() {
+        return mvnBuildConfig.getMvnHome();
+    }
+
+    public String getMvnOpts() {
+        return mvnBuildConfig.getMvnOpts();
+    }
+
+    public String getMvnArgs() {
+        return mvnBuildConfig.getMvnArgs();
+    }
+
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) {
         try {
@@ -66,28 +81,25 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
             EnvVars envVars = build.getEnvironment(launcher.getListener());
 
             FilePath workspace = build.getWorkspace();
-
-            GitHubRepositoryList kieRepoList = KieRepositoryLists.getListForBranch(baseRepository,
-                                                                                   branch);
             FilePath upstreamReposDir = new FilePath(workspace, "upstream-repos");
             // clean-up the destination directory to avoid stale content
             buildLogger.println("Cleaning-up directory " + upstreamReposDir.getRemote());
             upstreamReposDir.deleteRecursive();
 
-            kieRepoList.filterOutUnnecessaryUpstreamRepos(baseRepository);
-            Map<KieGitHubRepository, RefSpec> upstreamRepos = gatherUpstreamReposToBuild(baseRepository, branch, kieRepoList);
-            // clone upstream repositories
+            List<Tuple<GitHubRepository, GitBranch>> allRepos = RepositoryLists.createFor(GitHubRepository.from(baseRepository), new GitBranch(branch));
+            List<Tuple<GitHubRepository, GitBranch>> filteredRepos =
+                    RepositoryLists.filterOutUnnecessaryRepos(allRepos, GitHubRepository.from(baseRepository));
+            List<Tuple<GitHubRepository, RefSpec>> upstreamRepos = gatherUpstreamReposToBuild(GitHubRepository.from(baseRepository), filteredRepos);
+
             GitHubUtils.logRepositories(upstreamRepos, buildLogger);
+            // clone upstream repositories
             GitHubUtils.cloneRepositories(upstreamReposDir, upstreamRepos, GitHubUtils.GIT_REFERENCE_BASEDIR, listener);
-            KiePRBuildsHelper.KiePRBuildsHelperDescriptor globalSettings = KiePRBuildsHelper.getKiePRBuildsHelperDescriptor();
+
             // build upstream repositories using Maven
-            String mavenHome = globalSettings.getMavenHome();
-            String mavenArgLine = globalSettings.getUpstreamBuildsMavenArgLine();
-            String mavenOpts = globalSettings.getMavenOpts();
-            for (KieGitHubRepository ghRepo : upstreamRepos.keySet()) {
+            for (GitHubRepository repo : upstreamRepos.stream().map(Tuple::_1).collect(Collectors.toList())) {
                 MavenProject mavenProject = new MavenProject(new FilePath(upstreamReposDir,
-                        ghRepo.getName()), mavenHome, mavenOpts, launcher, listener);
-                mavenProject.build(mavenArgLine, envVars, buildLogger);
+                        repo.getName()), mvnBuildConfig.getMvnHome(), mvnBuildConfig.getMvnOpts(), launcher, listener);
+                mavenProject.build(mvnBuildConfig.getMvnArgs(), envVars, buildLogger);
             }
         } catch (Exception ex) {
             buildLogger.println("Unexpected error while executing the StandardBuildsUpstreamReposBuilder! " + ex.getMessage());
@@ -102,20 +114,20 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
     /**
      * Gather list of upstream repositories that needs to be build before the base repository.
      *
-     * @param baseRepoName   GitHub repository name
-     * @param baseRepoBranch branch name
-     * @return Map of upstream repositories with refspecs that need to be build before the base repository
+     * @param baseRepo base GitHub repository
+     * @return List of upstream repositories with refspecs that need to be build before the base repository
      */
-    private Map<KieGitHubRepository, RefSpec> gatherUpstreamReposToBuild(String baseRepoName, String baseRepoBranch, GitHubRepositoryList kieRepoList) {
-        Map<KieGitHubRepository, RefSpec> upstreamRepos = new LinkedHashMap<>();
-        for (KieGitHubRepository kieRepo : kieRepoList.getList()) {
-            String kieRepoName = kieRepo.getName();
-            if (kieRepoName.equals(baseRepoName)) {
+    private List<Tuple<GitHubRepository, RefSpec>> gatherUpstreamReposToBuild(GitHubRepository baseRepo,
+                                                                              List<Tuple<GitHubRepository, GitBranch>> allRepos) {
+        List<Tuple<GitHubRepository, RefSpec>> upstreamRepos = new ArrayList<>();
+        for (Tuple<GitHubRepository, GitBranch> repoWithBranch : allRepos) {
+            GitHubRepository repo = repoWithBranch._1();
+            if (repo.equals(baseRepo)) {
                 // we encountered the base repo, so all upstream repos were already processed and we can return the result
                 return upstreamRepos;
             }
-            String branch = KieRepositoryLists.getBaseBranchFor(kieRepoName, baseRepoName, baseRepoBranch);
-            upstreamRepos.put(kieRepo, new RefSpec(branch + ":" + branch + "-build"));
+            GitBranch branch = repoWithBranch._2();
+            upstreamRepos.add(Tuple.of(repo, new RefSpec(branch.getName() + ":" + branch.getName() + "-build")));
         }
         return upstreamRepos;
     }

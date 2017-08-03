@@ -19,6 +19,27 @@ public class GitHubRepository {
     private final String owner;
     private final String name;
 
+    /**
+     * Create {@link GitHubRepository} represented by the specified string.
+     *
+     * The expected format of the string is {@code [<owner>/]<repo>}. The {@code <owner>} part is optional and if not
+     * specified it is assumed the owner name is equal to the repo name (e.g. errai is treated as errai/errai).
+     *
+     * @param str string representation of the GitHub repository
+     * @return {@link GitHubRepository} parsed from the string
+     */
+    public static GitHubRepository from(String str) {
+        if (str.contains("/")) {
+            String[] parts = str.split("/");
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("String '" + str + "' cannot be parsed into valid GitHub repository!");
+            }
+            return new GitHubRepository(parts[0], parts[1]);
+        }
+        // no "/" means that the repository name and org. unit are equal
+        return new GitHubRepository(str, str);
+    }
+
     public GitHubRepository(String owner, String name) {
         if (owner == null || owner.isEmpty()) {
             throw new IllegalArgumentException("Repository 'owner' can not ben null or empty!");

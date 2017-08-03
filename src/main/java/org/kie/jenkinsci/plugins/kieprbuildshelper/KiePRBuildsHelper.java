@@ -43,10 +43,6 @@ public class KiePRBuildsHelper extends JobProperty<Job<?, ?>> {
 
         private String ghOAuthToken;
         private String mavenRepoCacheTgzUrl;
-        private String mavenHome;
-        private String mavenOpts;
-        private String upstreamBuildsMavenArgLine;
-        private String downstreamBuildsMavenArgLine;
 
         public KiePRBuildsHelperDescriptor() {
             super(KiePRBuildsHelper.class);
@@ -54,25 +50,15 @@ public class KiePRBuildsHelper extends JobProperty<Job<?, ?>> {
         }
 
         @DataBoundConstructor
-        public KiePRBuildsHelperDescriptor(String ghOAuthToken, String mavenRepoCacheTgzUrl, String mavenHome,
-                                           String mavenOpts, String upstreamBuildsMavenArgLine,
-                                           String downstreamBuildsMavenArgLine) {
+        public KiePRBuildsHelperDescriptor(String ghOAuthToken, String mavenRepoCacheTgzUrl) {
             this.ghOAuthToken = ghOAuthToken;
             this.mavenRepoCacheTgzUrl = mavenRepoCacheTgzUrl;
-            this.mavenHome = mavenHome;
-            this.upstreamBuildsMavenArgLine = upstreamBuildsMavenArgLine;
-            this.downstreamBuildsMavenArgLine = downstreamBuildsMavenArgLine;
-            this.mavenOpts = mavenOpts;
         }
 
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             ghOAuthToken = formData.getString("ghOAuthToken");
             mavenRepoCacheTgzUrl = formData.getString("mavenRepoCacheTgzUrl");
-            mavenHome = formData.getString("mavenHome");
-            upstreamBuildsMavenArgLine = formData.getString("upstreamBuildsMavenArgLine");
-            downstreamBuildsMavenArgLine = formData.getString("downstreamBuildsMavenArgLine");
-            mavenOpts = formData.getString("mavenOpts");
             save();
             return super.configure(req, formData);
         }
@@ -90,21 +76,6 @@ public class KiePRBuildsHelper extends JobProperty<Job<?, ?>> {
             return mavenRepoCacheTgzUrl;
         }
 
-        public String getMavenHome() {
-            return mavenHome;
-        }
-
-        public String getMavenOpts() {
-            return mavenOpts;
-        }
-
-        public String getUpstreamBuildsMavenArgLine() {
-            return upstreamBuildsMavenArgLine;
-        }
-
-        public String getDownstreamBuildsMavenArgLine() {
-            return downstreamBuildsMavenArgLine;
-        }
     }
 
 }
