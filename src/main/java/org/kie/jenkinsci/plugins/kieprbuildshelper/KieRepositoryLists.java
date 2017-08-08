@@ -34,6 +34,15 @@ public class KieRepositoryLists {
                 repos.addAll(fetchRepositoryList("kiegroup", "master"));
                 break;
 
+            case "7.3.x": // kiegroup branch
+            case "0.9.x": // dashbuilder branch
+            case "1.3.x": // uberfire branch
+                repos.add(new KieGitHubRepository("errai", "errai"));
+                repos.add(new KieGitHubRepository("uberfire", "uberfire"));
+                repos.add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
+                repos.addAll(fetchRepositoryList("kiegroup", "7.3.x"));
+                break;
+
             case "7.2.x": // kiegroup branch
             case "0.8.x": // dashbuilder branch
             case "1.2.x": // uberfire branch
@@ -73,6 +82,7 @@ public class KieRepositoryLists {
         List<BranchMapping> mappings = new ArrayList<>();
         // branches for errai, uf, dashbuilder, kie
         mappings.add(new BranchMapping("master", "master", "master", "master"));
+        mappings.add(new BranchMapping("4.0.x", "1.3.x", "0.9.x", "7.3.x"));
         mappings.add(new BranchMapping("4.0.x", "1.2.x", "0.8.x", "7.2.x"));
         mappings.add(new BranchMapping("4.0.x", "1.0.x", "0.6.x", "7.0.x"));
         mappings.add(new BranchMapping("3.2", "0.9.x", "0.5.x", "6.5.x"));
