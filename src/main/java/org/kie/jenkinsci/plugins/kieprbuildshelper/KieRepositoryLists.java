@@ -24,37 +24,52 @@ import org.apache.commons.io.IOUtils;
 
 public class KieRepositoryLists {
 
-    public static GitHubRepositoryList getListForBranch(String branch) {
+    public static GitHubRepositoryList getListForBranch(final String repository,
+                                                        final String branch) {
+        String namespacedBranchId = resolveRepositoryNamespace(repository) + ":" + branch;
+
         List<KieGitHubRepository> repos = new ArrayList<KieGitHubRepository>();
-        switch (branch) {
-            case "master":
+
+        if ("master".equals(branch)) {
+            repos.add(new KieGitHubRepository("errai", "errai"));
+            repos.add(new KieGitHubRepository("uberfire", "uberfire"));
+            repos.add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
+            repos.addAll(fetchRepositoryList("kiegroup", "master"));
+
+            return new GitHubRepositoryList(repos);
+        }
+
+        switch (namespacedBranchId) {
+            case "kiegroup:7.3.x": // kiegroup branch
+            case "dashbuilder:0.9.x": // dashbuilder branch
+            case "uberfire:1.3.x": // uberfire branch
                 repos.add(new KieGitHubRepository("errai", "errai"));
                 repos.add(new KieGitHubRepository("uberfire", "uberfire"));
                 repos.add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
-                repos.addAll(fetchRepositoryList("kiegroup", "master"));
+                repos.addAll(fetchRepositoryList("kiegroup", "7.3.x"));
                 break;
 
-            case "7.2.x": // kiegroup branch
-            case "0.8.x": // dashbuilder branch
-            case "1.2.x": // uberfire branch
+            case "kiegroup:7.2.x": // kiegroup branch
+            case "dashbuilder:0.8.x": // dashbuilder branch
+            case "uberfire:1.2.x": // uberfire branch
                 repos.add(new KieGitHubRepository("errai", "errai"));
                 repos.add(new KieGitHubRepository("uberfire", "uberfire"));
                 repos.add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
                 repos.addAll(fetchRepositoryList("kiegroup", "7.2.x"));
                 break;
 
-            case "7.0.x": // kiegroup branch
-            case "0.6.x": // dashbuilder branch
-            case "1.0.x": // uberfire branch
+            case "kiegroup:7.0.x": // kiegroup branch
+            case "dashbuilder:0.6.x": // dashbuilder branch
+            case "uberfire:1.0.x": // uberfire branch
                 repos.add(new KieGitHubRepository("errai", "errai"));
                 repos.add(new KieGitHubRepository("uberfire", "uberfire"));
                 repos.add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
                 repos.addAll(fetchRepositoryList("kiegroup", "7.0.x"));
                 break;
 
-            case "6.5.x": // kiegroup branch
-            case "0.5.x": // dashbuilder branch
-            case "0.9.x": // uberfire branch
+            case "kiegroup:6.5.x": // kiegroup branch
+            case "dashbuilder:0.5.x": // dashbuilder branch
+            case "uberfire:0.9.x": // uberfire branch
                 repos.add(new KieGitHubRepository("uberfire", "uberfire"));
                 repos.add(new KieGitHubRepository("uberfire", "uberfire-extensions"));
                 repos.add(new KieGitHubRepository("dashbuilder", "dashbuilder"));
@@ -67,12 +82,20 @@ public class KieRepositoryLists {
         return new GitHubRepositoryList(repos);
     }
 
+    private static String resolveRepositoryNamespace(final String repository) {
+        if (isErraiRepo(repository) || isUberFireRepo(repository) || isDashbuilderRepo(repository)) {
+            return repository;
+        }
+        return "kiegroup";
+    }
+
     private static final List<BranchMapping> BRANCH_MAPPINGS = initMappings();
 
     private static List<BranchMapping> initMappings() {
         List<BranchMapping> mappings = new ArrayList<>();
         // branches for errai, uf, dashbuilder, kie
         mappings.add(new BranchMapping("master", "master", "master", "master"));
+        mappings.add(new BranchMapping("4.0.x", "1.3.x", "0.9.x", "7.3.x"));
         mappings.add(new BranchMapping("4.0.x", "1.2.x", "0.8.x", "7.2.x"));
         mappings.add(new BranchMapping("4.0.x", "1.0.x", "0.6.x", "7.0.x"));
         mappings.add(new BranchMapping("3.2", "0.9.x", "0.5.x", "6.5.x"));

@@ -104,7 +104,8 @@ public class UpstreamReposBuilder extends Builder {
             GitHubPRSummary prSummary = GitHubPRSummary.fromPRLink(prLink, github);
 
             String prRepoName = prSummary.getTargetRepoName();
-            GitHubRepositoryList kieRepoList = KieRepositoryLists.getListForBranch(prTargetBranch);
+            GitHubRepositoryList kieRepoList = KieRepositoryLists.getListForBranch(prRepoName,
+                                                                                   prTargetBranch);
             kieRepoList.filterOutUnnecessaryUpstreamRepos(prRepoName);
             Map<KieGitHubRepository, RefSpec> upstreamRepos =
                     gatherUpstreamReposToBuild(prRepoName, prSourceBranch, prTargetBranch, prSummary.getSourceRepoOwner(), kieRepoList, github);
