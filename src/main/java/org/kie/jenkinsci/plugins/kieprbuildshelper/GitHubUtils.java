@@ -32,10 +32,14 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class GitHubUtils {
 
     public static final File GIT_REFERENCE_BASEDIR = new File("/home/jenkins/git-repos/");
+
+    public static final Pattern GITHUB_PR_URL_PATTERN = Pattern.compile("\\w+://github.com/.+/(.+)/pull/\\d+");
 
     public static List<GHPullRequest> getOpenPullRequests(GitHubRepository repo, GitHub github) {
         try {
@@ -110,5 +114,19 @@ public class GitHubUtils {
         } else {
             buildLogger.println("No required GitHub repositories found.");
         }
+    }
+
+    public static String extractRepositoryName(String prLink) {
+        if (prLink == null) {
+            throw new IllegalArgumentException("Supplied PR link is null");
+        }
+
+        Matcher matcher = GITHUB_PR_URL_PATTERN.matcher(prLink);
+
+        while (matcher.find()) {
+            return matcher.group(1);
+        }
+
+        throw new IllegalArgumentException("Supplied PR link '" + prLink + "' does not match expected pattern " + GITHUB_PR_URL_PATTERN );
     }
 }

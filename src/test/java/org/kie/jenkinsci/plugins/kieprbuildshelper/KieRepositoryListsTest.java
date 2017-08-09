@@ -24,7 +24,8 @@ public class KieRepositoryListsTest {
 
     @Test
     public void fetchRepositoryListForMaster() {
-        List<KieGitHubRepository> kieRepos = KieRepositoryLists.getListForBranch("master").getList();
+        List<KieGitHubRepository> kieRepos = KieRepositoryLists.getListForBranch("drools",
+                                                                                 "master").getList();
         // don't do any specific assertions as the repo list may change at any time as the test would then start failing
         // at least the manually added errai, uf and dashbuilder repos need to present though
         Assertions.assertThat(kieRepos.size()).isGreaterThan(3);
@@ -37,7 +38,8 @@ public class KieRepositoryListsTest {
 
     @Test
     public void fetchRepositoryListFor65x() {
-        List<KieGitHubRepository> kieRepos = KieRepositoryLists.getListForBranch("6.5.x").getList();
+        List<KieGitHubRepository> kieRepos = KieRepositoryLists.getListForBranch("drools",
+                                                                                 "6.5.x").getList();
         // don't do any specific assertions as the repo list may change at any time as the test would then start failing
         // at least the manually added errai, uf and dashbuilder repos need to present though
         Assertions.assertThat(kieRepos.size()).isGreaterThan(3);
@@ -51,7 +53,8 @@ public class KieRepositoryListsTest {
 
     @Test (expected = IllegalArgumentException.class)
     public void fetchRepositoryListForUnknownBranch() {
-        KieRepositoryLists.getListForBranch("unknown-branch");
+        KieRepositoryLists.getListForBranch("drools",
+                                            "unknown-branch");
     }
 
     @Test(expected = RuntimeException.class)

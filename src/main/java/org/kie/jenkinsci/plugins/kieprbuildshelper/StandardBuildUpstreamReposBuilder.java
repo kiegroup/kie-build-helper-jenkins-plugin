@@ -67,7 +67,8 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
 
             FilePath workspace = build.getWorkspace();
 
-            GitHubRepositoryList kieRepoList = KieRepositoryLists.getListForBranch(branch);
+            GitHubRepositoryList kieRepoList = KieRepositoryLists.getListForBranch(baseRepository,
+                                                                                   branch);
             FilePath upstreamReposDir = new FilePath(workspace, "upstream-repos");
             // clean-up the destination directory to avoid stale content
             buildLogger.println("Cleaning-up directory " + upstreamReposDir.getRemote());

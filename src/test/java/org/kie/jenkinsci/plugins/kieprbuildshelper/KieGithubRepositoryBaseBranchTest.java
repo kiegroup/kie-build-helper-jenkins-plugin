@@ -39,6 +39,14 @@ public class KieGithubRepositoryBaseBranchTest {
                 {new KieGitHubRepository("uberfire", "uberfire"), "guvnor", "master", "master"},
                 {new KieGitHubRepository("dashbuilder", "dashbuilder"), "guvnor", "master", "master"},
                 {new KieGitHubRepository("kiegroup", "guvnor"), "jbpm-wb", "master", "master"},
+                // upstream repo builds, 7.3.x branch
+                {new KieGitHubRepository("errai", "errai"), "uberfire", "1.3.x", "4.0.x"},
+                {new KieGitHubRepository("errai", "errai"), "dashbuilder", "0.9.x", "4.0.x"},
+                {new KieGitHubRepository("errai", "errai"), "guvnor", "7.3.x", "4.0.x"},
+                {new KieGitHubRepository("uberfire", "uberfire"), "dashbuilder", "0.9.x", "1.3.x"},
+                {new KieGitHubRepository("uberfire", "uberfire"), "guvnor", "7.3.x", "1.3.x"},
+                {new KieGitHubRepository("dashbuilder", "dashbuilder"), "guvnor", "7.3.x", "0.9.x"},
+                {new KieGitHubRepository("kiegroup", "guvnor"), "jbpm-wb", "7.3.x", "7.3.x"},
                 // upstream repo builds, 7.2.x branch
                 {new KieGitHubRepository("errai", "errai"), "uberfire", "1.2.x", "4.0.x"},
                 {new KieGitHubRepository("errai", "errai"), "dashbuilder", "0.8.x", "4.0.x"},

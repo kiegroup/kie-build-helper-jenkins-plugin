@@ -24,7 +24,8 @@ public class GitHubRepositoryListTest {
 
     @Test
     public void shouldFilterOutUFAndDashbuilderReposForDroolsRepo() {
-        GitHubRepositoryList ghList = KieRepositoryLists.getListForBranch("master");
+        GitHubRepositoryList ghList = KieRepositoryLists.getListForBranch("drools",
+                                                                          "master");
         ghList.filterOutUnnecessaryUpstreamRepos("drools");
         assertFalse(ghList.contains(new KieGitHubRepository("errai", "errai")));
         assertFalse(ghList.contains(new KieGitHubRepository("uberfire", "uberfire")));
@@ -36,7 +37,8 @@ public class GitHubRepositoryListTest {
 
     @Test
     public void shouldNotFilterOutErraiAndUFAndDashbuilderReposForDroolsjbpmIntegrationRepo() {
-        GitHubRepositoryList ghList = KieRepositoryLists.getListForBranch("master");
+        GitHubRepositoryList ghList = KieRepositoryLists.getListForBranch("droolsjbpm-integration",
+                                                                          "master");
         ghList.filterOutUnnecessaryUpstreamRepos("droolsjbpm-integration");
         assertTrue(ghList.contains(new KieGitHubRepository("errai", "errai")));
         assertTrue(ghList.contains(new KieGitHubRepository("uberfire", "uberfire")));
