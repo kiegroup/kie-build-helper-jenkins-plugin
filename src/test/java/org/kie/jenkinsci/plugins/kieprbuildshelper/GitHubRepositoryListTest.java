@@ -34,7 +34,7 @@ public class GitHubRepositoryListTest {
         List<GitHubRepository> repos = filtered.stream().map(Tuple::_1).collect(Collectors.toList());
         assertThat(repos).contains(
                 new GitHubRepository("errai", "errai"),
-                new GitHubRepository("uberfire", "uberfire"),
+                new GitHubRepository("AppFormer", "uberfire"),
                 new GitHubRepository("dashbuilder", "dashbuilder"),
                 new GitHubRepository("kiegroup", "droolsjbpm-knowledge")
         );
