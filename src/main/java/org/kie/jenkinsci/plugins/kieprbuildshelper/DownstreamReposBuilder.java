@@ -40,8 +40,8 @@ import org.kohsuke.stapler.StaplerRequest;
 public class DownstreamReposBuilder extends AbstractPRBuilder {
 
     @DataBoundConstructor
-    public DownstreamReposBuilder(String mvnHome, String mvnOpts, String mvnArgs) {
-        super(mvnHome, mvnOpts, mvnArgs);
+    public DownstreamReposBuilder(String mavenHome, String mavenOpts, String mavenArgs) {
+        super(mavenHome, mavenOpts, mavenArgs);
     }
 
     @Override

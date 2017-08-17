@@ -1,15 +1,15 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 
-  <f:entry title="MAVEN_HOME" field="mvnHome" description="Maven home directory">
+  <f:entry title="MAVEN_HOME" field="mavenHome" description="Maven home directory">
     <f:textbox default="/opt/tools/apache-maven-3.3.9" />
   </f:entry>
 
-  <f:entry title="MAVEN_OPTS" field="mvnOpts" description="JVM settings for the Maven">
+  <f:entry title="MAVEN_OPTS" field="mavenOpts" description="JVM settings for the Maven">
     <f:textbox default="-Xmx2g" />
   </f:entry>
 
-  <f:entry title="Maven argument line" field="mvnArgs" description="Maven argument line (goals, properties, profiles, etc)">
+  <f:entry title="Maven argument line" field="mavenArgs" description="Maven argument line (goals, properties, profiles, etc)">
     <f:textbox default="-B -e -DskipTests -Dgwt.compiler.skip=true -Denforcer.skip=true -Dcheckstyle.skip=true -Dfindbugs.skip=true -Drevapi.skip=true clean install" />
   </f:entry>
 

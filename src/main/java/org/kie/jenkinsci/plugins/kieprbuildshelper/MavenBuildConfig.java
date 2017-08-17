@@ -16,25 +16,25 @@
 package org.kie.jenkinsci.plugins.kieprbuildshelper;
 
 public class MavenBuildConfig {
-    private final String mvnHome;
-    private final String mvnOpts;
-    private final String mvnArgs;
+    private final String mavenHome;
+    private final String mavenOpts;
+    private final String mavenArgs;
 
-    public MavenBuildConfig(String mvnHome, String mvnOpts, String mvnArgs) {
-        this.mvnHome = mvnHome;
-        this.mvnOpts = mvnOpts;
-        this.mvnArgs = mvnArgs;
+    public MavenBuildConfig(String mavenHome, String mavenOpts, String mavenArgs) {
+        this.mavenHome = mavenHome;
+        this.mavenOpts = mavenOpts;
+        this.mavenArgs = mavenArgs;
     }
 
-    public String getMvnHome() {
-        return mvnHome;
+    public String getMavenHome() {
+        return mavenHome;
     }
 
-    public String getMvnOpts() {
-        return mvnOpts;
+    public String getMavenOpts() {
+        return mavenOpts;
     }
 
-    public String getMvnArgs() {
-        return mvnArgs;
+    public String getMavenArgs() {
+        return mavenArgs;
     }
 }
