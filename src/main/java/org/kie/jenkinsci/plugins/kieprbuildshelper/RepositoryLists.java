@@ -125,12 +125,6 @@ public class RepositoryLists {
      * TODO: this is an ugly hack. The dependency between repositories (or directly modules) should to be checked automatically for every build
      */
     public static List<Tuple<GitHubRepository, GitBranch>> filterOutUnnecessaryRepos(List<Tuple<GitHubRepository, GitBranch>> repos, GitHubRepository baseRepo) {
-        if (Arrays.asList("droolsjbpm-knowledge", "drools", "optaplanner").contains(baseRepo.getName())) {
-            repos.removeIf(repo -> repo._1().equals(new GitHubRepository("errai", "errai")));
-            repos.removeIf(repo -> repo._1().equals(new GitHubRepository("uberfire", "uberfire")));
-            repos.removeIf(repo -> repo._1().equals(new GitHubRepository("uberfire", "uberfire-extensions")));
-            repos.removeIf(repo -> repo._1().equals(new GitHubRepository("dashbuilder", "dashbuilder")));
-        }
         // nothing depends on stuff from -tools repo
         repos.removeIf(repo -> repo._1().equals(new GitHubRepository("kiegroup", "droolsjbpm-tools")));
         // no need to build docs as other repos do not depend on them

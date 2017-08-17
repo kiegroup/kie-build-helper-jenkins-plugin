@@ -25,23 +25,6 @@ import static org.assertj.core.api.Assertions.*;
 public class GitHubRepositoryListTest {
 
     @Test
-    public void shouldFilterOutUFAndDashbuilderReposForDroolsRepo() {
-        List<Tuple<GitHubRepository, GitBranch>> fullList =
-                RepositoryLists.createFor(new GitHubRepository("kiegroup", "drools"), new GitBranch("7.2.x"));
-        List<Tuple<GitHubRepository, GitBranch>> filtered =
-                RepositoryLists.filterOutUnnecessaryRepos(fullList, new GitHubRepository("kiegroup", "drools"));
-        List<GitHubRepository> repos = filtered.stream().map(Tuple::_1).collect(Collectors.toList());
-
-        assertThat(repos).doesNotContain(
-                new GitHubRepository("errai", "errai"),
-                new GitHubRepository("uberfire", "uberfire"),
-                new GitHubRepository("uberfire", "uberfire-extensions"),
-                new GitHubRepository("dashbuilder", "dashbuilder")
-        );
-        assertThat(repos).contains(new GitHubRepository("kiegroup", "droolsjbpm-knowledge"));
-    }
-
-    @Test
     public void shouldNotFilterOutErraiAndUFAndDashbuilderReposForDroolsjbpmIntegrationRepo() {
         List<Tuple<GitHubRepository, GitBranch>> fullList =
                 RepositoryLists.createFor(new GitHubRepository("kiegroup", "droolsjbpm-integration"), GitBranch.MASTER);
