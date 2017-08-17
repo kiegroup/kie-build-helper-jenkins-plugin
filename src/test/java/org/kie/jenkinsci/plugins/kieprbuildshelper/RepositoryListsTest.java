@@ -39,7 +39,7 @@ public class RepositoryListsTest {
         // repo list for 7.2.x should be stable enough to make assertions on those
         Assertions.assertThat(repos).containsExactly(
                 Tuple.of(new GitHubRepository("errai", "errai"), new GitBranch("4.0.x")),
-                Tuple.of(new GitHubRepository("uberfire", "uberfire"), new GitBranch("1.2.x")),
+                Tuple.of(new GitHubRepository("AppFormer", "uberfire"), new GitBranch("1.2.x")),
                 Tuple.of(new GitHubRepository("dashbuilder", "dashbuilder"), new GitBranch("0.8.x")),
                 Tuple.of(new GitHubRepository("kiegroup", "droolsjbpm-build-bootstrap"), BRANCH_72X),
                 Tuple.of(new GitHubRepository("kiegroup", "droolsjbpm-knowledge"), BRANCH_72X),
