@@ -91,7 +91,7 @@ public class GitHubPRSummary {
         }
     }
 
-    public static GitHubPRSummary fromGHPullRequest(GHPullRequest pr) {
+    public static GitHubPRSummary fromGHPullRequest(final GHPullRequest pr) {
         String targetRepoOwner = pr.getBase().getUser().getLogin();
         String targetRepoName = pr.getBase().getRepository().getName();
         GitHubRepository targetRepo = new GitHubRepository(targetRepoOwner, targetRepoName);
@@ -103,10 +103,14 @@ public class GitHubPRSummary {
         GitBranch sourceBranch = new GitBranch(pr.getHead().getRef());
 
         Boolean isMergeable;
+        String errorMsg = "Can not get 'mergeable' status for PR " + pr;
         try {
             isMergeable = pr.getMergeable();
+            if (isMergeable == null) { // the method getMergeable() can return null which is not valid
+                throw new NullPointerException(errorMsg + ". The github-api library returned null!");
+            }
         } catch (IOException e) {
-            throw new RuntimeException("Can not get 'mergeable' status for PR " + pr, e);
+            throw new RuntimeException(errorMsg, e);
         }
         return new GitHubPRSummary(pr.getNumber(), targetRepo, targetBranch, sourceRepo, sourceBranch, isMergeable);
     }
