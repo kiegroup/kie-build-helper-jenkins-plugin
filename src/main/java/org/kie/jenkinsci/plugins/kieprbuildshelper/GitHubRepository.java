@@ -82,8 +82,9 @@ public class GitHubRepository {
 
         GitHubRepository that = (GitHubRepository) o;
 
-        if (owner != null ? !owner.equals(that.owner) : that.owner != null) return false;
-        return name != null ? name.equals(that.name) : that.name == null;
+        // ignore case when comparing as GitHub is not case sensitive (e.g. KIEgroup == kiegroup)
+        if (owner != null ? !owner.equalsIgnoreCase(that.owner) : that.owner != null) return false;
+        return name != null ? name.equalsIgnoreCase(that.name) : that.name == null;
     }
 
     @Override
