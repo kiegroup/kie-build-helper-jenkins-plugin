@@ -59,7 +59,7 @@ public class RepositoryLists {
                 return repos;
             }
         }
-        throw new IllegalArgumentException("Can not create repository list for repository " + repo + "' and branch " + branch);
+        throw new IllegalArgumentException("Can not create repository list for repository " + repo + " and branch " + branch);
     }
 
     public static List<GitHubRepository> fetchKIERepositoryList(GitBranch branch) {
