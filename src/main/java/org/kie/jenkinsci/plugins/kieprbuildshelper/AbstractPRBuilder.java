@@ -35,22 +35,22 @@ public abstract class AbstractPRBuilder extends Builder {
     private transient PrintStream buildLogger;
 
     private transient GitHubPRSummary pr;
-    private final MavenBuildConfig mvnBuildConfig;
+    private final MavenBuildConfig mavenBuildConfig;
 
-    public AbstractPRBuilder(String mvnHome, String mvnOpts, String mvnArgs) {
-        this.mvnBuildConfig = new MavenBuildConfig(mvnHome, mvnOpts, mvnArgs);
+    public AbstractPRBuilder(String mavenHome, String mavenOpts, String mavenArgs) {
+        this.mavenBuildConfig = new MavenBuildConfig(mavenHome, mavenOpts, mavenArgs);
     }
 
-    public String getMvnHome() {
-        return mvnBuildConfig.getMvnHome();
+    public String getMavenHome() {
+        return mavenBuildConfig.getMavenHome();
     }
 
-    public String getMvnOpts() {
-        return mvnBuildConfig.getMvnOpts();
+    public String getMavenOpts() {
+        return mavenBuildConfig.getMavenOpts();
     }
 
-    public String getMvnArgs() {
-        return mvnBuildConfig.getMvnArgs();
+    public String getMavenArgs() {
+        return mavenBuildConfig.getMavenArgs();
     }
 
     protected abstract String getDescription();
@@ -96,9 +96,9 @@ public abstract class AbstractPRBuilder extends Builder {
             // build the repositories using Maven
             for (Tuple<GitHubRepository, RefSpec> repoWithRefSpec : reposToBuild) {
                 GitHubRepository repo = repoWithRefSpec._1();
-                MavenProject mavenProject = new MavenProject(new FilePath(reposDir, repo.getName()), mvnBuildConfig.getMvnHome(),
-                                                             mvnBuildConfig.getMvnOpts(), launcher, listener);
-                mavenProject.build(mvnBuildConfig.getMvnArgs(), envVars, buildLogger);
+                MavenProject mavenProject = new MavenProject(new FilePath(reposDir, repo.getName()), mavenBuildConfig.getMavenHome(),
+                                                             mavenBuildConfig.getMavenOpts(), launcher, listener);
+                mavenProject.build(mavenBuildConfig.getMavenArgs(), envVars, buildLogger);
             }
         } catch (Exception ex) {
             buildLogger.println("Unexpected error while executing the " + getDescription() + "! " + ex.getMessage());

@@ -42,15 +42,15 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
 
     private final String baseRepository;
     private final String branch;
-    private final MavenBuildConfig mvnBuildConfig;
+    private final MavenBuildConfig mavenBuildConfig;
 
     private transient PrintStream buildLogger;
 
     @DataBoundConstructor
-    public StandardBuildUpstreamReposBuilder(String baseRepository, String branch, String mvnHome, String mvnOpts, String mvnArgs) {
+    public StandardBuildUpstreamReposBuilder(String baseRepository, String branch, String mavenHome, String mavenOpts, String mavenArgs) {
         this.baseRepository = baseRepository;
         this.branch = branch;
-        this.mvnBuildConfig = new MavenBuildConfig(mvnHome, mvnOpts, mvnArgs);
+        this.mavenBuildConfig = new MavenBuildConfig(mavenHome, mavenOpts, mavenArgs);
     }
 
     public String getBaseRepository() {
@@ -61,16 +61,16 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
         return branch;
     }
 
-    public String getMvnHome() {
-        return mvnBuildConfig.getMvnHome();
+    public String getMavenHome() {
+        return mavenBuildConfig.getMavenHome();
     }
 
-    public String getMvnOpts() {
-        return mvnBuildConfig.getMvnOpts();
+    public String getMavenOpts() {
+        return mavenBuildConfig.getMavenOpts();
     }
 
-    public String getMvnArgs() {
-        return mvnBuildConfig.getMvnArgs();
+    public String getMavenArgs() {
+        return mavenBuildConfig.getMavenArgs();
     }
 
     @Override
@@ -98,8 +98,8 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
             // build upstream repositories using Maven
             for (GitHubRepository repo : upstreamRepos.stream().map(Tuple::_1).collect(Collectors.toList())) {
                 MavenProject mavenProject = new MavenProject(new FilePath(upstreamReposDir,
-                        repo.getName()), mvnBuildConfig.getMvnHome(), mvnBuildConfig.getMvnOpts(), launcher, listener);
-                mavenProject.build(mvnBuildConfig.getMvnArgs(), envVars, buildLogger);
+                        repo.getName()), mavenBuildConfig.getMavenHome(), mavenBuildConfig.getMavenOpts(), launcher, listener);
+                mavenProject.build(mavenBuildConfig.getMavenArgs(), envVars, buildLogger);
             }
         } catch (Exception ex) {
             buildLogger.println("Unexpected error while executing the StandardBuildsUpstreamReposBuilder! " + ex.getMessage());
