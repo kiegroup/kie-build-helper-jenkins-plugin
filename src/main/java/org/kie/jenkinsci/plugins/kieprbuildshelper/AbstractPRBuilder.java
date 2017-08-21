@@ -142,7 +142,7 @@ public abstract class AbstractPRBuilder extends Builder {
         try {
             return GitHub.connectUsingOAuth(ghOAuthToken);
         } catch (IOException e) {
-            throw new RuntimeException("Can not connect to GitHub using the configured OAuth token!");
+            throw new RuntimeException("Can not connect to GitHub using the configured OAuth token!", e);
         }
     }
 
