@@ -71,7 +71,7 @@ public class UpstreamReposBuilder extends AbstractPRBuilder {
             }
             result.add(repoWithBranch);
         }
-        throw new IllegalStateException("PR repository not found in the list of all repositories!");
+        throw new IllegalStateException("PR repository (" + prRepo + ") not found in the list of all repositories (" + allRepos + ")!");
     }
 
     @Override
