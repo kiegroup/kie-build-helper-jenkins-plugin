@@ -15,6 +15,7 @@
 
 package org.kie.jenkinsci.plugins.kieprbuildshelper;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.assertj.core.api.Assertions;
@@ -27,7 +28,9 @@ public class RepositoryListsTest {
 
     @Test
     public void fetchRepositoryListForMaster() {
-        List<Tuple<GitHubRepository, GitBranch>> repos = RepositoryLists.createFor(DROOLS_REPO, GitBranch.MASTER);
+        List<Tuple<GitHubRepository, GitBranch>> repos = RepositoryLists.create(Collections.emptyList(),
+                                                                                Tuple.of(RepositoryLists.KIE_BOOTSTRAP_REPO, GitBranch.MASTER),
+                                                                                GitBranch.MASTER);
         // don't do too specific assertions as the repo list may change at any time as the test would then start failing
         // check just that the list is not empty as there should always some repos
         Assertions.assertThat(repos).isNotEmpty();
@@ -35,12 +38,11 @@ public class RepositoryListsTest {
 
     @Test
     public void fetchRepositoryListFor72x() {
-        List<Tuple<GitHubRepository, GitBranch>> repos = RepositoryLists.createFor(DROOLS_REPO, BRANCH_72X);
+        List<Tuple<GitHubRepository, GitBranch>> repos = RepositoryLists.create(Collections.emptyList(),
+                                                                                Tuple.of(RepositoryLists.KIE_BOOTSTRAP_REPO, BRANCH_72X),
+                                                                                new GitBranch("7.2.x"));
         // repo list for 7.2.x should be stable enough to make assertions on those
         Assertions.assertThat(repos).containsExactly(
-                Tuple.of(new GitHubRepository("errai", "errai"), new GitBranch("4.0.x")),
-                Tuple.of(new GitHubRepository("AppFormer", "uberfire"), new GitBranch("1.2.x")),
-                Tuple.of(new GitHubRepository("dashbuilder", "dashbuilder"), new GitBranch("0.8.x")),
                 Tuple.of(new GitHubRepository("kiegroup", "droolsjbpm-build-bootstrap"), BRANCH_72X),
                 Tuple.of(new GitHubRepository("kiegroup", "droolsjbpm-knowledge"), BRANCH_72X),
                 Tuple.of(new GitHubRepository("kiegroup", "drools"), BRANCH_72X),
@@ -60,11 +62,6 @@ public class RepositoryListsTest {
                 Tuple.of(new GitHubRepository("kiegroup", "kie-docs"), BRANCH_72X),
                 Tuple.of(new GitHubRepository("kiegroup", "kie-wb-distributions"), BRANCH_72X)
         );
-    }
-
-    @Test (expected = IllegalArgumentException.class)
-    public void fetchRepositoryListForUnknownBranch() {
-        RepositoryLists.createFor(DROOLS_REPO, new GitBranch("unknown-branch-for-testing"));
     }
 
 }

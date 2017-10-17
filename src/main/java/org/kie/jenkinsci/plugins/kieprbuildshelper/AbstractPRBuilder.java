@@ -20,6 +20,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import hudson.EnvVars;
 import hudson.FilePath;
@@ -73,21 +74,49 @@ public abstract class AbstractPRBuilder extends Builder {
             FilePath reposDir = getBuildDir(build.getWorkspace());
             buildLogger.println("Cleaning-up directory " + reposDir.getRemote());
             reposDir.deleteRecursive();
-
-            // figure out the location of the repository-list.txt and branch-mapping.yaml files
-            // if there is an open PR for bootstrap repo, tied together with this PR, use the files from there, otherwise
-            // use the default ones
             GitBranch prSourceBranch = pr.getSourceBranch();
             GitBranch prTargetBranch = pr.getTargetBranch();
-            List<Tuple<GitHubRepository, GitBranch>> allRepos;
+
             Optional<GitHubPRSummary> bootstrapRepoPR =
                     GitHubUtils.findOpenPullRequest(RepositoryLists.KIE_BOOTSTRAP_REPO, prSourceBranch, pr.getSourceRepo().getOwner(), github);
-            if (prTargetBranch.equals(GitBranch.MASTER) && bootstrapRepoPR.isPresent()) {
-                GitHubRepository bootstrapRepo = new GitHubRepository(bootstrapRepoPR.get().getSourceRepo().getOwner(), bootstrapRepoPR.get().getTargetRepoName());
-                allRepos = RepositoryLists.createFor(pr.getTargetRepo(), prTargetBranch, bootstrapRepo, prSourceBranch);
+
+            // there are only two possible locations for the branch-mapping.yaml file (the file only exists on master branch):
+            //   1) PR branch of a custom droolsjbpm-build-bootstrap repo, in case the target branch is master
+            //   2) default location - droolsjbpm-build-bootstrap repo + master branch
+            Set<BranchMapping> branchMappings;
+            if (bootstrapRepoPR.isPresent() && prTargetBranch.equals(GitBranch.MASTER)) {
+                branchMappings = BranchMappingFactory.createFrom(RepositoryLists.KIE_BOOTSTRAP_REPO, prSourceBranch);
             } else {
-                allRepos = RepositoryLists.createFor(pr.getTargetRepo(), prTargetBranch);
+                branchMappings = BranchMappingFactory.createFrom(RepositoryLists.KIE_BOOTSTRAP_REPO, GitBranch.MASTER);
             }
+
+            BranchMapping branchMapping = BranchMappingFactory.getBranchMapping(branchMappings, pr.getTargetRepo(), prTargetBranch);
+            GitBranch kieTargetBranch = branchMapping.getKieBranch();
+
+            // figure out the location of the repository-list.txt
+            // there are generally two cases:
+            // 1) there is no associated PR for -build-bootstrap.
+            //     -- 'repository-list.txt' is taken from the KIE target branch
+            //
+            // 2) there is an associated PR for -build-bootstrap and the target branch is master
+            //    -- 'repository-list.txt' is taken from the
+
+            Tuple<GitHubRepository, GitBranch> repositoryListLocation;
+
+            // conditions based on the above three cases
+            if (!bootstrapRepoPR.isPresent()) {
+                // case 1)
+                repositoryListLocation = Tuple.of(RepositoryLists.KIE_BOOTSTRAP_REPO, kieTargetBranch);
+            } else {
+                // case 2) - PR for -build-bootstrap exists
+                GitHubPRSummary bootstrapPR = bootstrapRepoPR.get();
+                GitHubRepository bootstrapRepo = new GitHubRepository(bootstrapPR.getSourceRepo().getOwner(), bootstrapPR.getTargetRepoName());
+                repositoryListLocation = Tuple.of(bootstrapRepo, prSourceBranch);
+            }
+            buildLogger.printf("Using repository-list.txt from %s,%s.\n", repositoryListLocation._1(), repositoryListLocation._2());
+
+
+            List<Tuple<GitHubRepository, GitBranch>> allRepos = RepositoryLists.create(branchMapping.getUpstreamDeps(), repositoryListLocation, kieTargetBranch);
 
             List<Tuple<GitHubRepository, GitBranch>> filteredRepos = getReposToBuild(pr.getTargetRepo(), allRepos);
             List<Tuple<GitHubRepository, RefSpec>> reposToBuild = transformToRefSpecs(filteredRepos, github);

@@ -32,6 +32,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -86,7 +87,12 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
             buildLogger.println("Cleaning-up directory " + upstreamReposDir.getRemote());
             upstreamReposDir.deleteRecursive();
 
-            List<Tuple<GitHubRepository, GitBranch>> allRepos = RepositoryLists.createFor(GitHubRepository.from(baseRepository), new GitBranch(branch));
+            Set<BranchMapping> branchMappings = BranchMappingFactory.createFrom(RepositoryLists.KIE_BOOTSTRAP_REPO, GitBranch.MASTER);
+            BranchMapping branchMapping = BranchMappingFactory.getBranchMapping(branchMappings, GitHubRepository.from(baseRepository), new GitBranch(branch));
+            GitBranch kieTargetBranch = branchMapping.getKieBranch();
+
+            Tuple<GitHubRepository, GitBranch> repositoryListLocation = Tuple.of(RepositoryLists.KIE_BOOTSTRAP_REPO, kieTargetBranch);
+            List<Tuple<GitHubRepository, GitBranch>> allRepos = RepositoryLists.create(branchMapping.getUpstreamDeps(), repositoryListLocation, kieTargetBranch);
             List<Tuple<GitHubRepository, GitBranch>> filteredRepos =
                     RepositoryLists.filterOutUnnecessaryRepos(allRepos, GitHubRepository.from(baseRepository));
             List<Tuple<GitHubRepository, RefSpec>> upstreamRepos = gatherUpstreamReposToBuild(GitHubRepository.from(baseRepository), filteredRepos);

@@ -20,51 +20,28 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
-import org.yaml.snakeyaml.Yaml;
 
 public class RepositoryLists {
-
-    private static Logger logger = Logger.getLogger(RepositoryLists.class.getName());
 
     public static final String KIE_ORG_UNIT = "kiegroup";
     public static final GitHubRepository KIE_BOOTSTRAP_REPO = new GitHubRepository(KIE_ORG_UNIT, "droolsjbpm-build-bootstrap");
 
-    public static List<Tuple<GitHubRepository, GitBranch>> createFor(GitHubRepository repo, GitBranch branch) {
-        return createFor(repo, branch, KIE_BOOTSTRAP_REPO, GitBranch.MASTER);
-    }
-    public static List<Tuple<GitHubRepository, GitBranch>> createFor(GitHubRepository repo, GitBranch branch,
-                                                                     GitHubRepository bootstrapRepo, GitBranch bootstrapBranch) {
-        String branchMappingContent = fetchBranchMappingFile(bootstrapRepo, bootstrapBranch);
-        List<List<Tuple<GitHubRepository, GitBranch>>> allBranches = new ArrayList<>();
-        Yaml yaml = new Yaml();
-        Map<String, List> map = (Map<String, List>) yaml.load(branchMappingContent);
-        for (Map.Entry<String, List> entry : map.entrySet()) {
-            final GitBranch kieBranch = new GitBranch(entry.getKey());
-            List<Map<String, String>> upstreamRepos = (List<Map<String, String>>) entry.getValue();
-            List<Tuple<GitHubRepository, GitBranch>> repos = parseUpstreamReposBranchMapping(upstreamRepos);
-            fetchKIERepositoryList(kieBranch).forEach(r -> repos.add(new Tuple<>(r, kieBranch)));
-            allBranches.add(repos);
-        }
-        // now we have repository lists for all branches and need to filter the correct list based on the requested repo+branch
-        Tuple<GitHubRepository, GitBranch> requested = new Tuple<>(repo, branch);
-        for (List<Tuple<GitHubRepository, GitBranch>> repos : allBranches) {
-            if (repos.contains(requested)) {
-                return repos;
-            }
-        }
-        throw new IllegalArgumentException("Can not create repository list for repository " + repo + " and branch " + branch);
+
+    public static List<Tuple<GitHubRepository, GitBranch>> create(List<Tuple<GitHubRepository, GitBranch>> upstreamDeps,
+                                                                  Tuple<GitHubRepository, GitBranch> repositoryListLocation,
+                                                                  GitBranch kieBranch) {
+
+        List<Tuple<GitHubRepository, GitBranch>> repos = new ArrayList<>(upstreamDeps);
+        fetchKIERepositoryList(repositoryListLocation._1(), repositoryListLocation._2()).forEach(r -> repos.add(new Tuple<>(r, kieBranch)));
+        return repos;
     }
 
-    public static List<GitHubRepository> fetchKIERepositoryList(GitBranch branch) {
+    public static List<GitHubRepository> fetchKIERepositoryList(GitHubRepository repo, GitBranch branch) {
         List<GitHubRepository> repos = new ArrayList<>();
-        URL reposFileUrl = createUrlForRepositoryList(KIE_BOOTSTRAP_REPO, branch);
+        URL reposFileUrl = createUrlForRepositoryList(repo, branch);
         try (InputStream input = reposFileUrl.openStream()) {
             for (String repoName : IOUtils.readLines(input)) {
                 // this is an exception for 6.5.x and older branches
@@ -78,38 +55,6 @@ public class RepositoryLists {
             throw new RuntimeException("Can not fetch kiegroup repository list '" + reposFileUrl + "'!", e);
         }
         return repos;
-    }
-
-    public static String fetchBranchMappingFile(GitHubRepository bootstrapRepo, GitBranch bootstrapBranch) {
-        String branchMappingFileContent;
-        URL branchMappingUrl;
-        try {
-            branchMappingUrl = createUrlForBranchMappingFile(bootstrapRepo, bootstrapBranch);
-            branchMappingFileContent = IOUtils.toString(branchMappingUrl);
-            logger.fine("Raw content of the fetched branch mapping file:\n" + branchMappingFileContent);
-        } catch (IOException e) {
-            throw new RuntimeException("Can not fetch branch mapping file!", e);
-        }
-        return branchMappingFileContent;
-    }
-
-    private static List<Tuple<GitHubRepository, GitBranch>> parseUpstreamReposBranchMapping(List<Map<String, String>> upstreamRepos) {
-        List<Tuple<GitHubRepository, GitBranch>> result = new ArrayList<>();
-        for (Map<String, String> map : upstreamRepos) {
-            for (Map.Entry<String, String> repoToBranch : map.entrySet()) {
-                result.add(Tuple.of(GitHubRepository.from(repoToBranch.getKey()), new GitBranch(repoToBranch.getValue())));
-            }
-        }
-        return result;
-    }
-
-    private static URL createUrlForBranchMappingFile(GitHubRepository bootstrapRepo, GitBranch branch) {
-        String strUrl = "https://raw.githubusercontent.com/" + bootstrapRepo.getFullName() + "/" + branch.getName() + "/script/branch-mapping.yaml";
-        try {
-            return new URL(strUrl);
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("Invalid branch mapping file URL: " + strUrl, e);
-        }
     }
 
     private static URL createUrlForRepositoryList(GitHubRepository repo, GitBranch branch) {
