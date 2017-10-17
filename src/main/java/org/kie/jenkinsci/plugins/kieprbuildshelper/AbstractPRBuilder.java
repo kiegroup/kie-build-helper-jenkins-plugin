@@ -85,7 +85,7 @@ public abstract class AbstractPRBuilder extends Builder {
             //   2) default location - droolsjbpm-build-bootstrap repo + master branch
             Set<BranchMapping> branchMappings;
             if (bootstrapRepoPR.isPresent() && prTargetBranch.equals(GitBranch.MASTER)) {
-                branchMappings = BranchMappingFactory.createFrom(RepositoryLists.KIE_BOOTSTRAP_REPO, prSourceBranch);
+                branchMappings = BranchMappingFactory.createFrom(bootstrapRepoPR.get().getSourceRepo(), prSourceBranch);
             } else {
                 branchMappings = BranchMappingFactory.createFrom(RepositoryLists.KIE_BOOTSTRAP_REPO, GitBranch.MASTER);
             }
