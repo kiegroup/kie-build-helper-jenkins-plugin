@@ -186,6 +186,10 @@ public abstract class AbstractPRBuilder extends Builder {
         if (prLink == null || "".equals(prLink)) {
             throw new IllegalStateException("PR link not set! Make sure variable 'ghprbPullLink' contains valid link to GitHub Pull Request!");
         }
-        this.pr = GitHubPRSummary.fromPRLink(prLink, github);
+        try {
+            this.pr = GitHubPRSummary.fromPRLink(prLink, github);
+        } catch (IOException e) {
+            throw new RuntimeException("Error while querying GitHub API to get more info about " + prLink, e);
+        }
     }
 }

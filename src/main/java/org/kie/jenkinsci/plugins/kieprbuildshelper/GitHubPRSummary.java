@@ -75,7 +75,7 @@ public class GitHubPRSummary {
      *
      * @return summary about the GitHub PR
      */
-    public static GitHubPRSummary fromPRLink(String prLink, GitHub github) {
+    public static GitHubPRSummary fromPRLink(String prLink, GitHub github) throws IOException {
         String str = removeGithubDotCom(prLink);
         String[] parts = str.split("/");
         String targetRepoOwner = parts[0];
@@ -91,7 +91,7 @@ public class GitHubPRSummary {
         }
     }
 
-    public static GitHubPRSummary fromGHPullRequest(final GHPullRequest pr) {
+    public static GitHubPRSummary fromGHPullRequest(final GHPullRequest pr) throws IOException {
         String targetRepoOwner = pr.getBase().getUser().getLogin();
         String targetRepoName = pr.getBase().getRepository().getName();
         GitHubRepository targetRepo = new GitHubRepository(targetRepoOwner, targetRepoName);
