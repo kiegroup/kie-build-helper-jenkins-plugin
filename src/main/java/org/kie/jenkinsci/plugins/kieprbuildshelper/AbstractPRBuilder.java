@@ -15,6 +15,7 @@
 
 package org.kie.jenkinsci.plugins.kieprbuildshelper;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -28,8 +29,14 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.tasks.Builder;
+import jenkins.model.Jenkins;
+import okhttp3.Cache;
+import okhttp3.OkHttpClient;
+import okhttp3.OkUrlFactory;
 import org.eclipse.jgit.transport.RefSpec;
 import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.extras.OkHttp3Connector;
 
 public abstract class AbstractPRBuilder extends Builder {
 
@@ -168,8 +175,13 @@ public abstract class AbstractPRBuilder extends Builder {
         if (ghOAuthToken == null) {
             throw new IllegalStateException("No GitHub OAuth token found. Please set one on global Jenkins configuration page.");
         }
+        File cacheDirectory = new File(Jenkins.getInstance().getRootDir(), "kie-build-helper-github-api-cache");
+        Cache cache = new Cache(cacheDirectory, 20 * 1024 * 1024); // 20MiB cache
         try {
-            return GitHub.connectUsingOAuth(ghOAuthToken);
+            OkHttpClient okHttpClient = new OkHttpClient.Builder().cache(cache).build();
+            return new GitHubBuilder().withOAuthToken(ghOAuthToken)
+                    .withConnector(new OkHttp3Connector(new OkUrlFactory(okHttpClient)))
+                    .build();
         } catch (IOException e) {
             throw new RuntimeException("Can not connect to GitHub using the configured OAuth token!", e);
         }
