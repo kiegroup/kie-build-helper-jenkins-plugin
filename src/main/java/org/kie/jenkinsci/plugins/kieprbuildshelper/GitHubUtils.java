@@ -60,7 +60,7 @@ public class GitHubUtils {
                 // check if the PR source branch and name of the fork are the ones we are looking for
                 if (pr.getHead().getRef().equals(sourceBranch.getName()) &&
                         pr.getHead().getRepository().getOwner().getLogin().equals(prAuthor)) {
-                    return Optional.of(GitHubPRSummary.fromGHPullRequest(pr));
+                    return Optional.of(GitHubPRSummary.fromGHPullRequest(pr, github));
                 }
             }
             return Optional.empty();

@@ -15,12 +15,23 @@
 
 package org.kie.jenkinsci.plugins.kieprbuildshelper;
 
+import com.evanlennick.retry4j.CallExecutor;
+import com.evanlennick.retry4j.CallResults;
+import com.evanlennick.retry4j.config.RetryConfig;
+import com.evanlennick.retry4j.config.RetryConfigBuilder;
+import com.evanlennick.retry4j.exception.RetriesExhaustedException;
 import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GitHub;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.temporal.ChronoUnit;
+import java.util.concurrent.Callable;
 
 public class GitHubPRSummary {
+
+    private static final Logger logger = LoggerFactory.getLogger(GitHubPRSummary.class);
 
     private final int number;
     private final GitHubRepository targetRepo;
@@ -85,13 +96,13 @@ public class GitHubPRSummary {
         GHPullRequest pr;
         try {
             pr = github.getRepository(targetRepoOwner + "/" + targetRepoName).getPullRequest(number);
-            return GitHubPRSummary.fromGHPullRequest(pr);
+            return GitHubPRSummary.fromGHPullRequest(pr, github);
         } catch (IOException e) {
             throw new RuntimeException("Error getting info about PR " + prLink, e);
         }
     }
 
-    public static GitHubPRSummary fromGHPullRequest(final GHPullRequest pr) throws IOException {
+    public static GitHubPRSummary fromGHPullRequest(final GHPullRequest pr, final GitHub github) throws IOException {
         String targetRepoOwner = pr.getBase().getUser().getLogin();
         String targetRepoName = pr.getBase().getRepository().getName();
         GitHubRepository targetRepo = new GitHubRepository(targetRepoOwner, targetRepoName);
@@ -101,18 +112,44 @@ public class GitHubPRSummary {
         String sourceRepoName = pr.getHead().getRepository().getName();
         GitHubRepository sourceRepo = new GitHubRepository(sourceRepoOwner, sourceRepoName);
         GitBranch sourceBranch = new GitBranch(pr.getHead().getRef());
+        boolean isMergeable = getMergeableStatus(pr, targetRepo, pr.getNumber(), github);
+        return new GitHubPRSummary(pr.getNumber(), targetRepo, targetBranch, sourceRepo, sourceBranch, isMergeable);
+    }
 
-        Boolean isMergeable;
-        String errorMsg = "Can not get 'mergeable' status for PR " + pr;
+    private static boolean getMergeableStatus(final GHPullRequest originPR, final GitHubRepository repo, final int prNumber, final GitHub github) {
+        // try the original PR object first, in case it was already populated with data
         try {
-            isMergeable = pr.getMergeable();
-            if (isMergeable == null) { // the method getMergeable() can return null which is not valid
-                throw new NullPointerException(errorMsg + ". The github-api library returned null!");
+            Boolean mergeable = originPR.getMergeable();
+            if (mergeable != null) {
+                return mergeable;
             }
         } catch (IOException e) {
-            throw new RuntimeException(errorMsg, e);
+            // ignore and try again with the below retry config
         }
-        return new GitHubPRSummary(pr.getNumber(), targetRepo, targetBranch, sourceRepo, sourceBranch, isMergeable);
+        Callable<Boolean> isMergeableCallable = () -> {
+            logger.debug("Trying to get mergeable status for PR #{}, repo {}", prNumber, repo);
+            // this is a workaround for incomplete json message received by github api (in some cases). The mergeable
+            // status is sometimes 'null' and subsequent calls to pr.getMergeable() won't fetch the updated content
+            GHPullRequest pr = github.getRepository(repo.getFullName()).getPullRequest(prNumber);
+            Boolean isMergeable = pr.getMergeable();
+            if (isMergeable == null) {
+                throw new IOException("Can not get 'mergeable' status for PR " + pr);
+            }
+            return isMergeable;
+        };
+        RetryConfig retryConfig = new RetryConfigBuilder()
+                .retryOnSpecificExceptions(IOException.class)
+                .withMaxNumberOfTries(5)
+                .withDelayBetweenTries(3, ChronoUnit.SECONDS)
+                .withExponentialBackoff()
+                .build();
+        try {
+            CallResults<Boolean> callResult = new CallExecutor(retryConfig).execute(isMergeableCallable);
+            return  callResult.getResult();
+        } catch (RetriesExhaustedException ree) {
+            //the call exhausted all tries without succeeding
+            throw new RuntimeException("Failed to get mergeable status for PR #" + prNumber + ", repo " + repo, ree);
+        }
     }
 
     /**
