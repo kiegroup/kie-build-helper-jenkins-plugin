@@ -23,13 +23,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 public class BranchMappingFactory {
-    private static Logger logger = Logger.getLogger(RepositoryLists.class.getName());
+    private static Logger logger = LoggerFactory.getLogger(BranchMappingFactory.class);
 
     public static Set<BranchMapping> createFrom(GitHubRepository repo, GitBranch branch) {
         return createFrom(fetchBranchMappingFile(repo, branch));
@@ -81,7 +82,7 @@ public class BranchMappingFactory {
         try {
             branchMappingUrl = createUrlForBranchMappingFile(repo, branch);
             branchMappingFileContent = IOUtils.toString(branchMappingUrl);
-            logger.fine("Raw content of the fetched branch mapping file:\n" + branchMappingFileContent);
+            logger.trace("Raw content of the fetched branch mapping file ({}):\n{}", branchMappingUrl, branchMappingFileContent);
         } catch (IOException e) {
             throw new RuntimeException("Can not fetch branch mapping file!", e);
         }

@@ -33,6 +33,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.25</version>
+    </dependency>
+    <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>git-client</artifactId>
       <version>1.19.0</version>
