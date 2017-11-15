@@ -15,13 +15,15 @@
 
 package org.kie.jenkinsci.plugins.kieprbuildshelper;
 
+import java.io.ByteArrayInputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Proc;
 import hudson.model.BuildListener;
-
-import java.io.PrintStream;
 
 public class MavenProject {
 
@@ -64,6 +66,31 @@ public class MavenProject {
         }
         if (exitCode != 0) {
             throw new RuntimeException("Error while executing Maven process, non-zero exit code!");
+        }
+    }
+
+    private static final String CLEAN_UP_SCRIPT =
+            "find . -type d -wholename '*/target/*wildfly*Final' -prune -exec rm -rf {} \\;\n" +
+            "find . -type d -wholename '*/target/cargo' -prune -exec rm -rf {} \\;\n" +
+            "find . -type d -name 'gwt-unitCache' -prune -exec rm -rf {} \\;";
+
+    public void cleanUpBuildArtifacts(FilePath workspace) {
+        FilePath cleanUpScript = new FilePath(workspace, "clean-up-script.sh");
+        int exitCode;
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(CLEAN_UP_SCRIPT.getBytes(StandardCharsets.UTF_8))){
+            cleanUpScript.copyFrom(bais);
+            Proc proc = launcher.launch()
+                    .cmdAsSingleString("sh " + cleanUpScript.getRemote())
+                    .pwd(projectBasedir)
+                    .stdout(listener.getLogger())
+                    .stderr(listener.getLogger())
+                    .start();
+            exitCode = proc.join();
+        } catch (Exception e) {
+            throw new RuntimeException("Error while executing clean-up script '" + cleanUpScript.getRemote() + "'!", e);
+        }
+        if (exitCode != 0) {
+            throw new RuntimeException("Error while executing clean-up script, non-zero exit code!");
         }
     }
 }

@@ -128,6 +128,7 @@ public abstract class AbstractPRBuilder extends Builder {
                 MavenProject mavenProject = new MavenProject(new FilePath(reposDir, repo.getName()), mavenBuildConfig.getMavenHome(),
                                                              mavenBuildConfig.getMavenOpts(), launcher, listener);
                 mavenProject.build(mavenBuildConfig.getMavenArgs(), envVars, buildLogger);
+                mavenProject.cleanUpBuildArtifacts(build.getWorkspace());
             }
         } catch (Exception ex) {
             buildLogger.println("Unexpected error while executing the " + getDescription() + "! " + ex.getMessage());
