@@ -42,7 +42,6 @@ public class KiePRBuildsHelper extends JobProperty<Job<?, ?>> {
     public static class KiePRBuildsHelperDescriptor extends JobPropertyDescriptor {
 
         private String ghOAuthToken;
-        private String mavenRepoCacheTgzUrl;
 
         public KiePRBuildsHelperDescriptor() {
             super(KiePRBuildsHelper.class);
@@ -50,15 +49,13 @@ public class KiePRBuildsHelper extends JobProperty<Job<?, ?>> {
         }
 
         @DataBoundConstructor
-        public KiePRBuildsHelperDescriptor(String ghOAuthToken, String mavenRepoCacheTgzUrl) {
+        public KiePRBuildsHelperDescriptor(String ghOAuthToken) {
             this.ghOAuthToken = ghOAuthToken;
-            this.mavenRepoCacheTgzUrl = mavenRepoCacheTgzUrl;
         }
 
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             ghOAuthToken = formData.getString("ghOAuthToken");
-            mavenRepoCacheTgzUrl = formData.getString("mavenRepoCacheTgzUrl");
             save();
             return super.configure(req, formData);
         }
@@ -70,10 +67,6 @@ public class KiePRBuildsHelper extends JobProperty<Job<?, ?>> {
 
         public String getGhOAuthToken() {
             return ghOAuthToken;
-        }
-
-        public String getMavenRepoCacheTgzUrl() {
-            return mavenRepoCacheTgzUrl;
         }
 
     }
