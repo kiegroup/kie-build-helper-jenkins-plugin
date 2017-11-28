@@ -16,8 +16,5 @@
     <f:entry title="GitHub OAuth token" field="ghOAuthToken" description="Authentication token used to call GitHub REST API">
       <f:password/>
     </f:entry>
-    <f:entry title="Maven repo cache tgz URL" field="mavenRepoCacheTgzUrl" description="URL for .tgz file with Maven repo cache used to speed-up builds.">
-      <f:textbox/>
-    </f:entry>
   </f:section>
 </j:jelly>
