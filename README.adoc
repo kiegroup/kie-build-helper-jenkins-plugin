@@ -15,12 +15,6 @@ that the plugin upgrade usually requires Jenkins restart.
 == Available extension points
 The plugin provides few extension points which can be leveraged in Jenkins jobs.
 
-==== Prepare Maven repo cache
-This is a build step which takes care of downloading Maven repo cache archive and unpacking the content into `$WORKSPACE/.repository`
-so that it can be used by subsequent Maven executions. It is not strictly necessary to use this step, but it greatly speeds up the build
-in case the local repository is empty at the start (which should be the case for multi-repo PR builds). The archive URL is stored in global
-configuration. It is currently not possible to use different cache archives for different jobs.
-
 ==== Upstream repositories builder
 This is a build step which adds support for building upstream repositories. Term upstream repository describes a
 repository which needs be built before some other repository (same relation as upstream Jenkins jobs). This is particularly useful
