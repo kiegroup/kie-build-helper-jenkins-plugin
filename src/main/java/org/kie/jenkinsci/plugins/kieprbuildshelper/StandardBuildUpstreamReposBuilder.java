@@ -15,6 +15,15 @@
 
 package org.kie.jenkinsci.plugins.kieprbuildshelper;
 
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.eclipse.jgit.transport.RefSpec;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.StaplerRequest;
+
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
@@ -25,15 +34,6 @@ import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import net.sf.json.JSONObject;
-import org.eclipse.jgit.transport.RefSpec;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.StaplerRequest;
-
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Upstream repos builder for standard (non PR) Jenkins builds. As opposed to {@link UpstreamReposBuilder} which is
@@ -86,13 +86,11 @@ public class StandardBuildUpstreamReposBuilder extends Builder {
             // clean-up the destination directory to avoid stale content
             buildLogger.println("Cleaning-up directory " + upstreamReposDir.getRemote());
             upstreamReposDir.deleteRecursive();
+            
+            GitBranch gitBranch = new GitBranch(branch);
 
-            Set<BranchMapping> branchMappings = BranchMappingFactory.createFrom(RepositoryLists.KIE_BOOTSTRAP_REPO, GitBranch.MASTER);
-            BranchMapping branchMapping = BranchMappingFactory.getBranchMapping(branchMappings, GitHubRepository.from(baseRepository), new GitBranch(branch));
-            GitBranch kieTargetBranch = branchMapping.getKieBranch();
-
-            Tuple<GitHubRepository, GitBranch> repositoryListLocation = Tuple.of(RepositoryLists.KIE_BOOTSTRAP_REPO, kieTargetBranch);
-            List<Tuple<GitHubRepository, GitBranch>> allRepos = RepositoryLists.create(branchMapping.getUpstreamDeps(), repositoryListLocation, kieTargetBranch);
+            Tuple<GitHubRepository, GitBranch> repositoryListLocation = Tuple.of(RepositoryLists.KIE_BOOTSTRAP_REPO,  gitBranch);
+            List<Tuple<GitHubRepository, GitBranch>> allRepos = RepositoryLists.create(repositoryListLocation, gitBranch);
             List<Tuple<GitHubRepository, GitBranch>> filteredRepos =
                     RepositoryLists.filterOutUnnecessaryRepos(allRepos, GitHubRepository.from(baseRepository));
             List<Tuple<GitHubRepository, RefSpec>> upstreamRepos = gatherUpstreamReposToBuild(GitHubRepository.from(baseRepository), filteredRepos);
