@@ -30,11 +30,10 @@ public class RepositoryLists {
     public static final GitHubRepository KIE_BOOTSTRAP_REPO = new GitHubRepository(KIE_ORG_UNIT, "droolsjbpm-build-bootstrap");
 
 
-    public static List<Tuple<GitHubRepository, GitBranch>> create(List<Tuple<GitHubRepository, GitBranch>> upstreamDeps,
-                                                                  Tuple<GitHubRepository, GitBranch> repositoryListLocation,
+    public static List<Tuple<GitHubRepository, GitBranch>> create(Tuple<GitHubRepository, GitBranch> repositoryListLocation,
                                                                   GitBranch kieBranch) {
 
-        List<Tuple<GitHubRepository, GitBranch>> repos = new ArrayList<>(upstreamDeps);
+        List<Tuple<GitHubRepository, GitBranch>> repos = new ArrayList<>();
         fetchKIERepositoryList(repositoryListLocation._1(), repositoryListLocation._2()).forEach(r -> repos.add(new Tuple<>(r, kieBranch)));
         return repos;
     }
@@ -44,12 +43,7 @@ public class RepositoryLists {
         URL reposFileUrl = createUrlForRepositoryList(repo, branch);
         try (InputStream input = reposFileUrl.openStream()) {
             for (String repoName : IOUtils.readLines(input)) {
-                // this is an exception for 6.5.x and older branches
-                if ("kie-eap-modules".equals(repoName)) {
-                    repos.add(new GitHubRepository("jboss-integration", repoName));
-                } else {
-                    repos.add(new GitHubRepository(KIE_ORG_UNIT, repoName));
-                }
+            	repos.add(new GitHubRepository(KIE_ORG_UNIT, repoName));
             }
         } catch (IOException e) {
             throw new RuntimeException("Can not fetch kiegroup repository list '" + reposFileUrl + "'!", e);
@@ -70,7 +64,7 @@ public class RepositoryLists {
      * TODO: this is an ugly hack. The dependency between repositories (or directly modules) should to be checked automatically for every build
      */
     public static List<Tuple<GitHubRepository, GitBranch>> filterOutUnnecessaryRepos(List<Tuple<GitHubRepository, GitBranch>> repos, GitHubRepository baseRepo) {
-        // nothing depends on stuff from -tools repo
+    	// nothing depends on stuff from -tools repo
         repos.removeIf(repo -> repo._1().equals(new GitHubRepository("kiegroup", "droolsjbpm-tools")));
         // no need to build docs as other repos do not depend on them
         repos.removeIf(repo -> repo._1().equals(new GitHubRepository("kiegroup", "kie-docs")));
